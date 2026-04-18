@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE `Order` ADD COLUMN `apartment` VARCHAR(191) NULL,
+    ADD COLUMN `entrance` VARCHAR(191) NULL,
+    ADD COLUMN `intercom` VARCHAR(191) NULL,
+    ADD COLUMN `floor` VARCHAR(191) NULL,
+    ADD COLUMN `promoCode` VARCHAR(191) NULL;

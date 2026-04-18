@@ -1,0 +1,3942 @@
+@font-face {
+  font-family: "Kreadon ExtraLight";
+  src: url("/fonts/Kreadon-ExtraLight.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.home-page {
+  --design-width: 1900;
+  --design-height: 1080;
+  --design-scale: min(calc(100vw / (var(--design-width) * 1px)), calc(100vh / (var(--design-height) * 1px)));
+  /**
+   * Кадрирование фона при object-fit: cover.
+   * center 100% — якорь по низу кадра (важная часть макета внизу фото).
+   * Иначе: center top, center 50%, left top …
+   */
+  --home-bg-object-position: center 100%;
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+  background: #000;
+  /* Полосы прокрутки (наследуются во вложенные скролл-контейнеры) */
+  --ui-scrollbar-size: 9px;
+  --ui-scrollbar-track: rgba(0, 0, 0, 0.12);
+  --ui-scrollbar-track-ff: rgba(0, 0, 0, 0.14);
+  --ui-scrollbar-thumb-a: rgba(160, 160, 160, 0.55);
+  --ui-scrollbar-thumb-b: rgba(110, 110, 110, 0.5);
+  --ui-scrollbar-thumb-hover-a: rgba(180, 180, 180, 0.7);
+  --ui-scrollbar-thumb-hover-b: rgba(130, 130, 130, 0.65);
+  --ui-scrollbar-thumb-border: rgba(0, 0, 0, 0.06);
+  --ui-scrollbar-thumb-border-hover: rgba(0, 0, 0, 0.08);
+  --ui-scrollbar-fg-ff: rgba(145, 145, 145, 0.82);
+}
+
+/* Полосы прокрутки: тонкие, серые «стеклянные», как у панелей каталога/поиска */
+.home-page * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-scrollbar-fg-ff) var(--ui-scrollbar-track-ff);
+}
+
+.home-page *::-webkit-scrollbar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--ui-scrollbar-size);
+  height: var(--ui-scrollbar-size);
+}
+
+.home-page *::-webkit-scrollbar-track {
+  background: var(--ui-scrollbar-track);
+  border-radius: 100px;
+  margin: 4px 0;
+}
+
+.home-page *::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    var(--ui-scrollbar-thumb-a) 0%,
+    var(--ui-scrollbar-thumb-b) 100%
+  );
+  border-radius: 100px;
+  border: 2px solid var(--ui-scrollbar-thumb-border);
+  background-clip: padding-box;
+}
+
+.home-page *::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    var(--ui-scrollbar-thumb-hover-a) 0%,
+    var(--ui-scrollbar-thumb-hover-b) 100%
+  );
+  border-color: var(--ui-scrollbar-thumb-border-hover);
+}
+
+.home-page *::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.home-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--home-bg-object-position, center 100%);
+  transform: none;
+  z-index: -1;
+  transition: filter 0.28s ease;
+}
+
+.home-page.auth-modal-open .home-background {
+  filter: blur(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-background {
+    transition: none;
+  }
+
+  .home-page.auth-modal-open .home-background {
+    filter: none;
+  }
+
+  .auth-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.catalog-overlay {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
+.auth-overlay {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  /* Выше шапки и панелей (7), иначе оверлей оказывается под ними и блюр не виден */
+  z-index: 8;
+  pointer-events: auto;
+  cursor: default;
+}
+
+
+.store-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 6;
+}
+
+.store-figma-panel {
+  --panel-base-width: 1518;
+  --panel-base-height: 929;
+  --panel-top-offset: 117px;
+  position: absolute;
+  left: 50%;
+  top: var(--panel-top-offset);
+  width: calc(var(--panel-base-width) * 1px);
+  height: calc(var(--panel-base-height) * 1px);
+  transform: translateX(-50%)
+    scale(
+      min(
+        1,
+        calc((100vw - 32px) / (var(--panel-base-width) * 1px)),
+        calc((100vh - 140px) / (var(--panel-base-height) * 1px))
+      )
+    );
+  transform-origin: top center;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 7;
+  overflow: hidden;
+}
+
+.store-figma-panel.is-cart-full {
+  --panel-base-width: 1102;
+}
+
+.store-figma-panel.is-checkout {
+  --panel-base-width: 903;
+  --panel-base-height: 1000;
+}
+
+.store-figma-panel.is-search-success {
+  --panel-base-width: 1518;
+}
+
+.store-figma-panel.is-search-empty {
+  --panel-base-width: 1518;
+}
+
+.store-figma-panel.is-product-card {
+  --panel-base-width: 1295;
+  --panel-base-height: 929;
+  /* Выше панели списка каталога (тот же z-index 7), когда оба в DOM */
+  z-index: 9;
+}
+
+.store-backdrop:has(+ .store-figma-panel.is-product-card) {
+  z-index: 8;
+}
+
+.store-figma-close {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.store-figma-close::before,
+.store-figma-close::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 14px;
+  width: 28px;
+  height: 2px;
+  background: #fff;
+}
+
+.store-figma-close::before { transform: rotate(45deg); }
+.store-figma-close::after { transform: rotate(-45deg); }
+
+.store-empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 72px 48px 100px;
+  box-sizing: border-box;
+}
+
+.store-empty-title {
+  position: static;
+  width: 100%;
+  max-width: 34rem;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 250;
+  font-size: 48px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.store-empty-title.is-cart {
+  max-width: 32rem;
+}
+
+.store-empty-subtitle {
+  position: static;
+  width: 100%;
+  max-width: 30rem;
+  margin: 0;
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 250;
+  font-size: 36px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.fav-full-list {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  top: 55px;
+  width: auto;
+  /* было top 146 + max-height (100%−180): ~34px снизу; при top 55 сохраняем тот же запас */
+  max-height: calc(100% - 89px);
+  display: grid;
+  grid-template-columns: repeat(4, 246px);
+  gap: 28px 20px;
+  justify-content: start;
+  align-content: start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 0 0 24px;
+  /* Резервируем место под полосу, чтобы 4-я колонка не заходила под скролл */
+  scrollbar-gutter: stable;
+}
+
+.fav-full-list > .search-loading {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px 0 20px;
+  text-align: center;
+}
+
+.fav-full-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 246px;
+  gap: 12px;
+}
+
+.fav-card {
+  position: relative;
+  width: 246px;
+  height: 324px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.fav-card-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 15px;
+  background: rgba(123, 123, 123, 0.25);
+}
+
+.fav-card:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+  border-radius: 15px;
+}
+
+.fav-like-button {
+  flex-shrink: 0;
+  width: 100%;
+  height: 49px;
+  border: 0;
+  border-radius: 15px;
+  padding: 0;
+  background: rgba(123, 123, 123, 0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fav-like-button:hover {
+  background: rgba(140, 140, 140, 0.35);
+}
+
+.fav-like-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+}
+
+.fav-like-button img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.fav-product-image {
+  position: absolute;
+  left: 40px;
+  top: 4px;
+  width: 165px;
+  height: 165px;
+  border-radius: 12px;
+  background: url("/krem1.png") center / cover no-repeat;
+}
+
+.fav-product-title {
+  position: absolute;
+  left: 6px;
+  top: 158px;
+  width: 233px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 2.05;
+  text-align: center;
+}
+
+.fav-product-desc {
+  position: absolute;
+  left: 26px;
+  top: 194px;
+  width: 193px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 13px;
+  line-height: 1.6153846154;
+  text-align: center;
+}
+
+.fav-product-volume {
+  position: absolute;
+  left: 103px;
+  top: 250px;
+  width: 40px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 2.5625;
+  text-align: center;
+}
+
+.fav-product-price {
+  position: absolute;
+  left: 72px;
+  top: 279px;
+  width: 112px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.28125;
+  text-align: center;
+}
+
+/* Корзина FULL — позиции и размеры по макету Figma (frame «Окно» 1102×929, node Корзина FULL) */
+.cart-screen-title {
+  position: absolute;
+  left: 150px;
+  top: 26px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 64px;
+  line-height: 0.640625;
+}
+
+.cart-screen-count {
+  position: absolute;
+  left: 150px;
+  top: 98px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 24px;
+  line-height: 1.7083333333;
+}
+
+.cart-loading-msg {
+  position: absolute;
+  left: 150px;
+  top: 170px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.9375;
+}
+
+.cart-full-title {
+  position: absolute;
+  left: 150px;
+  top: 538px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 0.8611111111;
+}
+
+.cart-items-scroll {
+  position: absolute;
+  left: 150px;
+  top: 170px;
+  width: 808px;
+  max-height: 344px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-right: 8px;
+}
+
+.cart-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 808px;
+  height: 160px;
+}
+
+.cart-item-bg {
+  position: absolute;
+  left: 2px;
+  top: 0;
+  width: 762px;
+  height: 160px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.cart-item-image {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 160px;
+  height: 160px;
+  background-color: transparent;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: 20px 0 0 20px;
+}
+
+.cart-item-category {
+  position: absolute;
+  left: 160px;
+  top: 39px;
+  margin: 0;
+  max-width: 306px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.cart-item-name {
+  position: absolute;
+  left: 160px;
+  top: 70px;
+  margin: 0;
+  max-width: 306px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.9375;
+}
+
+.cart-item-volume {
+  position: absolute;
+  left: 160px;
+  top: 92px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 2.5625;
+}
+
+.cart-item-price {
+  position: absolute;
+  left: 678px;
+  top: 64px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.cart-trash {
+  position: absolute;
+  left: 778px;
+  top: 65px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.cart-trash span {
+  display: block;
+  width: 30px;
+  height: 30px;
+  background-color: #fff;
+  -webkit-mask: url("/icons8-trash-90 2 (1).svg") center / contain no-repeat;
+  mask: url("/icons8-trash-90 2 (1).svg") center / contain no-repeat;
+}
+
+.cart-qty {
+  position: absolute;
+  left: 499px;
+  top: 58px;
+  width: 142px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.cart-qty-value {
+  position: absolute;
+  left: 57px;
+  top: 6px;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.9375;
+}
+
+/* Иконки: public/cart-icons/ — размеры как в инспекторе макета */
+.cart-qty-minus,
+.cart-qty-plus {
+  position: absolute;
+  top: 0;
+  height: 44px;
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+}
+
+.cart-qty-minus {
+  left: 12px;
+  width: 24px;
+  background-image: url("/cart-icons/minus.png");
+  background-size: 16px 3px;
+}
+
+.cart-qty-plus {
+  left: 101px;
+  width: 24px;
+  background-image: url("/cart-icons/plus.png");
+  background-size: 11px 11px;
+}
+
+.cart-cost-block {
+  position: absolute;
+  left: 173px;
+  width: 761px;
+  height: 35px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  border-bottom: 1px dashed #fff;
+}
+
+.cart-cost-products { top: 593px; }
+.cart-cost-discount { top: 648px; }
+.cart-cost-total { top: 782px; height: 31px; border-bottom: 1px dashed #fff; }
+
+.cart-cost-products span:first-child,
+.cart-cost-discount span:first-child {
+  font-size: 32px;
+  line-height: 0.96875;
+}
+
+.cart-cost-total span:first-child {
+  font-size: 36px;
+  line-height: 0.8611111111;
+}
+
+.cart-cost-block span:last-child {
+  font-size: 30px;
+  line-height: 1.0333333333;
+}
+
+.cart-checkout-btn {
+  position: absolute;
+  left: 394px;
+  top: 820px;
+  width: 319px;
+  height: 72.82px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 0.8611111111;
+}
+
+.checkout-title {
+  position: absolute;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 48px;
+  line-height: 0.8541666667;
+  text-align: center;
+}
+
+.checkout-title-recipient {
+  left: 114px;
+  top: 75px;
+  width: 257px;
+}
+
+.checkout-title-address {
+  left: 114px;
+  top: 390px;
+  width: 341px;
+}
+
+.checkout-field {
+  position: absolute;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.checkout-name {
+  left: 114px;
+  top: 158px;
+  width: 328px;
+  height: 75px;
+}
+
+.checkout-surname {
+  left: 489px;
+  top: 159px;
+  width: 328px;
+  height: 74px;
+}
+
+.checkout-phone {
+  left: 114px;
+  top: 259px;
+  width: 328px;
+  height: 75px;
+}
+
+.checkout-email {
+  left: 489px;
+  top: 259px;
+  width: 328px;
+  height: 75px;
+}
+
+.checkout-city {
+  left: 114px;
+  top: 468px;
+  width: 328px;
+  height: 40px;
+}
+
+.checkout-street {
+  left: 489px;
+  top: 468px;
+  width: 328px;
+  height: 40px;
+}
+
+.checkout-flat,
+.checkout-entrance,
+.checkout-intercom,
+.checkout-floor {
+  width: 130px;
+  height: 40px;
+}
+
+/* 4 поля в один ряд: 4×130 + 3×61 = 703px, как ширина комментария */
+.checkout-flat {
+  left: 114px;
+  top: 520px;
+}
+
+.checkout-entrance {
+  left: 305px;
+  top: 520px;
+}
+
+.checkout-floor {
+  left: 496px;
+  top: 520px;
+}
+
+.checkout-intercom {
+  left: 687px;
+  top: 520px;
+}
+
+.checkout-comment {
+  left: 114px;
+  top: 572px;
+  width: 703px;
+  height: 88px;
+  overflow: hidden;
+}
+
+.checkout-field-label {
+  position: absolute;
+  left: 13px;
+  top: 0;
+  margin: 0;
+  color: rgb(255 255 255 / 49%);
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 250;
+  font-size: 16px;
+  line-height: 2.5625;
+}
+
+/* Адрес: подпись и ввод слева; подпись скрывается при фокусе или при введённом тексте */
+.checkout-field--float {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.checkout-field-label--float {
+  left: 12px !important;
+  right: 12px;
+  top: 50% !important;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  transform: translateY(-50%);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.25;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.checkout-field--float:focus-within .checkout-field-label--float,
+.checkout-field--float.has-value .checkout-field-label--float {
+  opacity: 0;
+}
+
+.checkout-field--float .checkout-field-input {
+  left: 12px;
+  top: 50%;
+  width: calc(100% - 24px);
+  transform: translateY(-50%);
+  text-align: left;
+  font-size: 18px;
+  line-height: 1.25;
+  z-index: 1;
+}
+
+.checkout-field--float:focus-within .checkout-field-input,
+.checkout-field--float.has-value .checkout-field-input {
+  left: 12px;
+  transform: translateY(-50%);
+  text-align: left;
+}
+
+.checkout-field-value {
+  position: absolute;
+  left: 17px;
+  top: 27px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 24px;
+  line-height: 1.7083333333;
+}
+
+.checkout-email .checkout-field-label {
+  left: 10px;
+  top: 0;
+}
+
+.checkout-email .checkout-field-value {
+  left: 15px;
+}
+
+.checkout-phone .checkout-field-label {
+  left: 13px;
+  top: 0;
+}
+
+.checkout-field-input-phone {
+  left: 15px;
+  width: calc(100% - 30px);
+}
+
+.checkout-field-input,
+.checkout-field-textarea {
+  position: absolute;
+  left: 17px;
+  top: 27px;
+  width: calc(100% - 34px);
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 24px;
+  line-height: 1.35;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.checkout-field-input::placeholder,
+.checkout-field-textarea::placeholder {
+  color: rgb(255 255 255 / 35%);
+}
+
+.checkout-field-input:-webkit-autofill,
+.checkout-field-input:-webkit-autofill:hover,
+.checkout-field-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  box-shadow: 0 0 0 1000px rgba(30, 30, 30, 0.9) inset;
+  transition: background-color 99999s ease-out;
+}
+
+.checkout-field-input-email {
+  left: 15px;
+}
+
+.checkout-field-textarea {
+  left: 17px;
+  top: 26px;
+  width: calc(100% - 34px);
+  height: calc(100% - 38px);
+  min-height: 48px;
+  max-height: calc(100% - 38px);
+  resize: none;
+  font-size: 24px;
+  line-height: 1.35;
+  overflow-x: hidden;
+  overflow-y: auto;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.checkout-comment .checkout-field-label {
+  top: 10px;
+  left: 13px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.checkout-comment .checkout-field-textarea {
+  top: 34px;
+  height: calc(100% - 42px);
+  min-height: 0;
+  max-height: none;
+}
+
+.checkout-submit-btn {
+  position: absolute;
+  left: 292px;
+  top: 680px;
+  width: 319px;
+  height: 72.82px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 36px;
+  line-height: 0.8611111111;
+}
+
+.order-success-notice {
+  position: absolute;
+  left: 531px;
+  top: 345px;
+  width: 403px;
+  height: 207px;
+}
+
+.order-success-check-icon {
+  position: absolute;
+  left: 152px;
+  top: 0;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.order-success-text {
+  position: absolute;
+  left: 0;
+  top: 93px;
+  width: 403px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 24px;
+  line-height: 1.7083333333;
+  text-align: center;
+}
+
+.order-success-home-btn {
+  position: absolute;
+  left: 61px;
+  top: 153px;
+  width: 281px;
+  height: 54px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 24px;
+  line-height: 1.7083333333;
+  text-align: center;
+}
+
+.search-success-list {
+  position: absolute;
+  left: 35px;
+  top: 29px;
+  width: 1450px;
+  height: 860px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(5, 246px);
+  grid-auto-rows: 324px;
+  gap: 28px 20px;
+  align-content: start;
+}
+
+.search-loading {
+  margin: 0 0 12px;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* Не сдвигает карточки в гриде при появлении строки «Идет поиск…» */
+.search-loading--overlay {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  margin: 0;
+  padding: 6px 16px;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.search-success-card {
+  position: relative;
+  width: 246px;
+  height: 324px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.search-success-card.is-second {
+  left: auto;
+}
+
+.search-success-card-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 15px;
+  background: rgba(123, 123, 123, 0.25);
+  transition: background-color 0.2s ease;
+}
+
+.search-success-card:hover .search-success-card-bg,
+.search-success-card:focus-visible .search-success-card-bg {
+  background: rgba(123, 123, 123, 0.4);
+}
+
+.search-success-card:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+  border-radius: 15px;
+}
+
+.search-success-image {
+  position: absolute;
+  left: 54px;
+  top: 13px;
+  width: 137px;
+  height: 137px;
+  border-radius: 12px;
+  background: url("/krem1.png") center / cover no-repeat;
+}
+
+.search-success-image.is-second {
+  left: 54px;
+  top: 13px;
+  width: 137px;
+  height: 137px;
+  background-image: url("/krem2.png");
+}
+
+.search-success-title {
+  position: absolute;
+  left: 6px;
+  top: 145px;
+  width: 233px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 2.05;
+  text-align: center;
+}
+
+.search-success-desc {
+  position: absolute;
+  left: 26px;
+  top: 181px;
+  width: 193px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 13px;
+  line-height: 1.6153846154;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.search-success-volume {
+  position: absolute;
+  left: 81px;
+  top: 248px;
+  width: 84px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 2.5625;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.search-success-price {
+  position: absolute;
+  left: 50%;
+  top: 280px;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  margin: 0;
+  padding: 0 4px;
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.28125;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 300 = Kreadon-ExtraLight в index.css; 330 не совпадает ни с одним @font-face */
+.search-success-price.is-second {
+  font-weight: 300;
+}
+
+.search-empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 72px 100px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.catalog-products-panel {
+  --panel-base-width: 1518;
+  --panel-base-height: 929;
+}
+
+.catalog-products-title {
+  position: absolute;
+  left: 34px;
+  top: 22px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+/* Ровные поля: 5×246 + 4×20 = 1310px по центру панели 1518px */
+.catalog-results-list {
+  position: absolute;
+  left: calc((100% - (5 * 246px + 4 * 20px)) / 2);
+  top: 74px;
+  width: calc(5 * 246px + 4 * 20px);
+  height: 830px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  display: grid;
+  grid-template-columns: repeat(5, 246px);
+  grid-auto-rows: 324px;
+  gap: 28px 20px;
+  align-content: start;
+  box-sizing: border-box;
+}
+
+.search-empty-query {
+  position: static;
+  margin: 0;
+  max-width: 100%;
+  width: min(1100px, 100%);
+  max-height: min(38vh, 320px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 64px;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.search-empty-title,
+.search-empty-subtitle {
+  position: static;
+  flex-shrink: 0;
+  margin: 0;
+  width: 100%;
+  max-width: 36rem;
+  color: #ccc;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 250;
+  font-size: 48px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.search-empty-title {
+  max-width: 22rem;
+}
+
+.search-empty-subtitle {
+  max-width: 28rem;
+}
+
+.product-figma-layout {
+  position: absolute;
+  inset: 0;
+}
+
+.product-figma-image-wrap {
+  position: absolute;
+  left: 29px;
+  top: 0;
+  width: 377.35px;
+  height: 377.35px;
+}
+
+.product-figma-image {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 377.35px;
+  height: 377.35px;
+  background: url("/kartochka(krem1).png") center / cover no-repeat;
+}
+
+.product-figma-image.is-second {
+  background-image: url("/krem2.png");
+}
+
+.product-figma-head {
+  position: absolute;
+  left: 80px;
+  top: 382px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 1.28125;
+}
+
+.product-figma-name {
+  position: absolute;
+  left: 399px;
+  top: 78.4px;
+  width: 554px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2083333333;
+}
+
+.product-figma-buy {
+  position: absolute;
+  left: 399px;
+  top: 174.33px;
+  width: 372.61px;
+  height: 135.07px;
+  border-radius: 20px;
+  background: rgba(123, 123, 123, 0.25);
+}
+
+.product-figma-price {
+  position: absolute;
+  left: 18.09px;
+  top: 10.95px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 32px;
+  line-height: 1.28125;
+}
+
+.product-figma-add-btn {
+  position: absolute;
+  left: 17.87px;
+  top: 61.14px;
+  width: 263.02px;
+  height: 59.32px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 20px;
+  line-height: 2.05;
+  text-align: center;
+  cursor: pointer;
+}
+
+.product-figma-add-btn.is-in-cart {
+  width: 118.88px;
+}
+
+.product-figma-qty {
+  position: absolute;
+  left: 145px;
+  top: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  width: 138px;
+  height: 39px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: #00000040;
+}
+
+.product-figma-qty-value {
+  position: static;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 16px;
+  line-height: 31px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.product-figma-qty-btn {
+  position: static;
+  flex-shrink: 0;
+  width: 16px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 31px;
+  cursor: pointer;
+}
+
+.product-figma-like-btn {
+  position: absolute;
+  left: 292.24px;
+  top: 59.81px;
+  width: 61.98px;
+  height: 61.98px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.product-figma-like-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 34px;
+  height: 31px;
+  background: rgba(196, 196, 196, 1);
+  mask: url("/heart-none.png") center / contain no-repeat;
+  -webkit-mask: url("/heart-none.png") center / contain no-repeat;
+}
+
+.product-figma-like-btn.is-in-favorites {
+  background: linear-gradient(145deg, rgba(200, 50, 100, 0.85), rgba(140, 30, 70, 0.75));
+  box-shadow: inset 0 0 0 1px rgba(255, 200, 220, 0.45);
+}
+
+.product-figma-like-btn.is-in-favorites::before {
+  width: 30px;
+  height: 30px;
+  background: #ffb3c9;
+  mask: url("/home-assets/favorite.png") center / contain no-repeat;
+  -webkit-mask: url("/home-assets/favorite.png") center / contain no-repeat;
+}
+
+.product-figma-details {
+  position: absolute;
+  left: 81px;
+  top: 437px;
+  width: 1056px;
+  height: 492px;
+}
+
+.product-figma-tab {
+  position: absolute;
+  top: 0;
+  height: 41px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 20px;
+  line-height: 2.05;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.product-figma-tab.is-active {
+  border-radius: 20px;
+  background: rgba(123, 123, 123, 0.25);
+}
+
+/* Плашка «Описание»: центр текста совпадает с неактивной вкладкой (135px контент), отступы 40+40 */
+.product-figma-tab-description {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  text-align: center;
+}
+
+.product-figma-tab-description.is-active {
+  left: 0;
+  top: 2px;
+  width: 215px;
+  height: 37px;
+  padding: 0 40px;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+/* Активный «Состав» — layout_D045LP */
+.product-figma-tab-composition.is-active {
+  left: 546px;
+  top: 2px;
+  width: 147px;
+}
+
+/* Вкладки: координаты в Figma от края «Окна»; блок .product-figma-details сдвинут на left:81px */
+.product-figma-tab-description:not(.is-active) {
+  left: 40px;
+  width: 135px;
+}
+
+.product-figma-tab-characteristics {
+  left: 264px;
+  width: 218px;
+  top: -2px;
+}
+
+.product-figma-tab-composition {
+  left: 571px;
+  width: 101px;
+}
+
+.product-figma-tab-characteristics.is-active {
+  left: 260px;
+  width: 222px;
+  top: -2px;
+}
+
+.product-figma-text-viewport {
+  position: absolute;
+  left: 0;
+  top: 56px;
+  width: 1056px;
+  height: 436px;
+  overflow: hidden;
+}
+
+.product-figma-text-track {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  will-change: transform;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-figma-text-track {
+    transition: none;
+  }
+}
+
+.product-figma-text-slide {
+  flex: 0 0 1056px;
+  width: 1056px;
+  height: 100%;
+  position: relative;
+}
+
+.product-figma-text {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1056px;
+  height: 436px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon ExtraLight", "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  font-style: normal;
+  line-height: 17px;
+  white-space: pre-line;
+  overflow: auto;
+  padding-right: 6px;
+  box-sizing: border-box;
+}
+
+.product-figma-text.is-characteristics {
+  width: 1056px;
+  height: 436px;
+  font-size: 20px;
+  line-height: 38px;
+}
+
+.product-figma-text.is-composition {
+  width: 928px;
+  height: 265px;
+  font-size: 20px;
+  line-height: 27px;
+}
+
+.auth-modal {
+  position: absolute;
+  left: 699px;
+  top: 366px;
+  width: 502px;
+  height: 348px;
+  border-radius: 50px;
+  background: #d9d9d9;
+  z-index: 9;
+}
+
+.auth-modal.is-register {
+  top: 215px;
+  height: 758px;
+}
+
+.auth-modal.is-code {
+  top: 249px;
+  height: 582px;
+}
+
+.auth-close {
+  position: absolute;
+  left: 445px;
+  top: 31px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  cursor: pointer;
+}
+
+.auth-close::before,
+.auth-close::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 3px;
+  background: #7b7b7b;
+  border-radius: 1px;
+}
+
+.auth-close::before {
+  transform: rotate(45deg);
+}
+
+.auth-close::after {
+  transform: rotate(-45deg);
+}
+
+.auth-title {
+  position: absolute;
+  left: 43px;
+  top: 31px;
+  width: 389px;
+  margin: 0;
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 1.025;
+}
+
+.auth-title-register {
+  left: 34px;
+  top: 36px;
+  width: 389px;
+}
+
+.auth-title-code {
+  left: 73px;
+  top: 42px;
+  width: 366px;
+  height: 69px;
+  line-height: 1.025;
+}
+
+.auth-inline-link {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #525252;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-register-prompt {
+  top: 314px;
+  width: 420px;
+}
+
+.auth-login-prompt {
+  top: 682px;
+  width: 420px;
+}
+
+.auth-input-wrap {
+  position: absolute;
+  left: 43px;
+  top: 162px;
+  width: 416px;
+  height: 64px;
+}
+
+.auth-input-wrap.auth-input-wrap-login {
+  top: 146px;
+}
+
+.auth-field {
+  position: absolute;
+  left: 44px;
+  width: 416px;
+  height: 64px;
+}
+
+.auth-field-email {
+  top: 104px;
+}
+
+.auth-modal.is-register .auth-field-email {
+  top: 100px;
+}
+
+.auth-field-name {
+  top: 199px;
+}
+
+.auth-modal.is-register .auth-field-name {
+  top: 195px;
+}
+
+.auth-field-gender {
+  left: 45px;
+  width: 414px;
+  top: 293px;
+}
+
+.auth-modal.is-register .auth-field-gender {
+  top: 289px;
+}
+
+.auth-field-birthday {
+  top: 388px;
+}
+
+.auth-modal.is-register .auth-field-birthday {
+  top: 384px;
+}
+
+.auth-field-phone {
+  top: 483px;
+}
+
+.auth-modal.is-register .auth-field-phone {
+  top: 479px;
+}
+
+.auth-input-date {
+  color-scheme: light;
+  color: #434343;
+  -webkit-text-fill-color: #434343;
+}
+
+.auth-input-date::-webkit-datetime-edit-fields-wrapper,
+.auth-input-date::-webkit-datetime-edit-text,
+.auth-input-date::-webkit-datetime-edit-month-field,
+.auth-input-date::-webkit-datetime-edit-day-field,
+.auth-input-date::-webkit-datetime-edit-year-field {
+  color: #434343;
+  -webkit-text-fill-color: #434343;
+}
+
+.auth-input-date::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.auth-input-date::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.auth-select {
+  appearance: none;
+  color: #434343;
+  background-color: #c4c4c4;
+}
+
+.auth-select option {
+  color: #434343;
+  background-color: #c4c4c4;
+}
+
+.auth-input {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  border: 1px solid #7b7b7b;
+  background: #c4c4c4;
+  color: #434343;
+  font-family: "Kreadon ExtraLight", "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.7;
+  padding: 11px 13px;
+}
+
+.auth-input.auth-input-date {
+  color: #434343;
+  -webkit-text-fill-color: #434343;
+}
+
+.auth-input.auth-select {
+  color: #434343;
+  -webkit-text-fill-color: #434343;
+  background-color: #c4c4c4;
+  font-family: "Kreadon ExtraLight", "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+}
+
+.auth-input.is-error {
+  border-color: #940000;
+  border-width: 1.5px;
+}
+
+.auth-input-error {
+  position: absolute;
+  left: 50%;
+  top: 214px;
+  width: min(380px, calc(100% - 48px));
+  margin: 0;
+  transform: translateX(-50%);
+  color: #940000;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.auth-input-error-register-email {
+  top: 568px;
+  left: 50%;
+  width: min(400px, calc(100% - 48px));
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.auth-input::placeholder {
+  color: #a6a6a6;
+}
+
+.auth-submit {
+  position: absolute;
+  left: 147px;
+  top: 235px;
+  width: 208px;
+  height: 61px;
+  border: 0;
+  border-radius: 20px;
+  background: #6d6d6d;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.7;
+  cursor: pointer;
+}
+
+.auth-submit:disabled {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.auth-submit-register {
+  left: 144px;
+  top: 600px;
+  width: 215px;
+  height: 70px;
+}
+
+.auth-modal.is-register .auth-submit-register {
+  top: 600px;
+}
+
+.auth-register-api-error {
+  position: absolute;
+  left: 50%;
+  top: 565px;
+  width: min(420px, calc(100% - 40px));
+  margin: 0;
+  transform: translateX(-50%);
+  color: #940000;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+  z-index: 1;
+}
+
+.auth-confirm-submit {
+  left: 158px;
+  top: 329px;
+  width: 186px;
+  height: 64px;
+  background: #b8b8b8;
+  color: #9d9d9d;
+}
+
+.auth-confirm-submit.is-ready {
+  background: #6d6d6d;
+  color: #fff;
+}
+
+.auth-confirm-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.auth-confirm-submit.is-ready:disabled {
+  opacity: 0.85;
+}
+
+.auth-confirm-submit.is-success {
+  background: #7e7e7e;
+  color: #ffffff;
+}
+
+.auth-secondary-submit {
+  position: absolute;
+  left: 144px;
+  top: 565px;
+  width: 215px;
+  height: 56px;
+  border: 0;
+  border-radius: 20px;
+  background: #bababa;
+  color: #929292;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.7;
+  cursor: pointer;
+}
+
+.auth-dev-error {
+  position: absolute;
+  left: 50%;
+  top: 188px;
+  width: min(380px, calc(100% - 48px));
+  margin: 0;
+  transform: translateX(-50%);
+  color: #940000;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.auth-secondary-code {
+  left: 50%;
+  top: 486px;
+  transform: translateX(-50%);
+  width: 215px;
+  height: 70px;
+}
+
+.auth-code-email {
+  position: absolute;
+  left: 50%;
+  top: 108px;
+  width: calc(100% - 48px);
+  max-width: 420px;
+  margin: 0;
+  transform: translateX(-50%);
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 2.05;
+  text-align: center;
+}
+
+.auth-code-grid {
+  position: absolute;
+  left: 37px;
+  top: 191px;
+  width: 427px;
+  height: 100px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.auth-code-cell {
+  width: 100px;
+  height: 100px;
+  border-radius: 25px;
+  border: 1px solid #7b7b7b;
+  background: #c4c4c4;
+  color: #434343;
+  text-align: center;
+  font-family: "Kreadon ExtraLight", "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 48px;
+  line-height: 1;
+}
+
+.auth-code-cell.is-error {
+  border: 1.5px solid #940000;
+}
+
+.auth-code-cell.is-success {
+  border: 1px solid #7b7b7b;
+}
+
+.auth-code-timer {
+  position: absolute;
+  left: 50%;
+  top: 393px;
+  width: calc(100% - 48px);
+  max-width: 400px;
+  margin: 0;
+  transform: translateX(-50%);
+  color: #979797;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.7083;
+  text-align: center;
+}
+
+.auth-code-resend {
+  position: absolute;
+  left: 50%;
+  top: 393px;
+  width: calc(100% - 48px);
+  max-width: 400px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform: translateX(-50%);
+  color: #7e7e7e;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.7083;
+  text-align: center;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-code-resend:hover {
+  color: #5a5a5a;
+}
+
+.auth-code-resend:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  text-decoration: none;
+}
+
+.auth-code-error {
+  position: absolute;
+  left: 188px;
+  top: 284px;
+  width: 127px;
+  margin: 0;
+  color: #940000;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 2.05;
+  text-align: center;
+}
+
+.catalog-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(18.95vw, 22.5rem);
+  height: 100vh;
+  z-index: 6;
+  /* Ширина левой секции «Разделы»; правая колонка подкатегорий — отдельная дорожка грида */
+  --catalog-main-width: 360px;
+}
+
+.catalog-drawer--expanded {
+  width: min(92vw, 52rem);
+  --catalog-main-width: 372px;
+  /* Левая секция: translateX; правая (подложка): translateX и ширина слоя */
+  --catalog-main-shift: 0px;
+  --catalog-sub-shift: 0px;
+  /* Ширина правой полупрозрачной подложки по макету */
+  --catalog-sub-width: 94%;
+}
+
+/* Два независимых блока: правая подложка на весь слой, левая — поверх (как в макете «в разборе») */
+.catalog-drawer-split {
+  display: block;
+  position: relative;
+  isolation: isolate;
+  height: 100%;
+  border-radius: 0 1.5625rem 1.5625rem 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.catalog-main-panel {
+  position: relative;
+  z-index: 2;
+  width: var(--catalog-main-width);
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  background: rgba(217, 217, 217, 0.65);
+  border-radius: 0 1.5625rem 1.5625rem 0;
+  box-sizing: border-box;
+}
+
+.catalog-drawer--expanded .catalog-main-panel {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  border-radius: 0 1.5625rem 1.5625rem 0;
+  background: rgba(217, 217, 217, 0.65);
+  transform: translate3d(var(--catalog-main-shift, 0px), 0, 0);
+  backface-visibility: hidden;
+}
+
+.catalog-drawer--expanded .catalog-sub-column {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--catalog-sub-width, 100%);
+  min-width: 0;
+  /* Подложка на всю ширину; текст начинается справа от левой колонки */
+  padding: 0 18px 18px var(--catalog-main-width);
+  box-sizing: border-box;
+  background: rgba(217, 217, 217, 0.65);
+  border-radius: 0 1.5625rem 1.5625rem 0;
+  transform: translate3d(var(--catalog-sub-shift, 0px), 0, 0);
+  backface-visibility: hidden;
+}
+
+/* Только fade — без translate в keyframes, чтобы не дёргало композитинг и не конфликтовало со сдвигами */
+.home-page.menu-open .catalog-drawer:not(.catalog-drawer--expanded) .catalog-main-panel {
+  animation: catalog-narrow-fade-in 160ms ease-out;
+}
+
+.catalog-grid-page {
+  --catalog-header-band: 105px;
+  --catalog-row-step: 62px;
+  --catalog-data-rows: 7;
+  display: grid;
+  grid-template-rows: var(--catalog-header-band) repeat(var(--catalog-data-rows), var(--catalog-row-step));
+  align-content: start;
+  height: 100%;
+  padding-left: 20px;
+  box-sizing: border-box;
+}
+
+.catalog-header {
+  grid-row: 1;
+  align-self: start;
+  position: relative;
+  margin: 0;
+  width: 280px;
+  min-height: 65px;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalog-menu-button {
+  width: 54px;
+  height: 54px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.catalog-menu-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(0%) hue-rotate(154deg)
+    brightness(93%) contrast(90%);
+}
+
+.catalog-title {
+  display: block;
+  width: 170px;
+  height: 70px;
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 50px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.catalog-list,
+.catalog-sub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.catalog-list {
+  position: relative;
+  height: 100%;
+}
+
+.catalog-nav-grid {
+  display: contents;
+}
+
+.catalog-list--grid {
+  display: contents;
+}
+
+.catalog-item {
+  position: relative;
+  left: 2px;
+  width: 325px;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+.catalog-item-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.catalog-item-button.is-active {
+  color: #525252;
+}
+
+.catalog-arrow {
+  color: #525252;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.catalog-sub-heading {
+  grid-row: 1;
+  align-self: start;
+  min-width: 0;
+  /* padding-top задаётся в App.tsx: 20px как у шапки «Каталог» + titleY из макета */
+}
+
+.catalog-sub-list {
+  position: relative;
+  height: 100%;
+}
+
+.catalog-sub-list li {
+  position: relative;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+.catalog-sub-item {
+  position: relative;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  color: #525252;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.3;
+  text-align: left;
+  padding: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.catalog-sub-item.is-hovered-row {
+  background: transparent;
+}
+
+.catalog-sub-item.is-hovered-row::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--item-x, 14px) - 16px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 407px;
+  height: 55px;
+  background: #898989;
+  z-index: -1;
+}
+
+.catalog-sub-item:hover {
+  background: rgba(137, 137, 137, 0.35);
+}
+
+.catalog-sub-item.is-hovered-row:hover {
+  background: transparent;
+}
+
+.catalog-sub-title {
+  position: relative;
+  left: auto;
+  top: auto;
+  margin: 0;
+  color: #525252;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 3.125rem;
+  line-height: 0.76375;
+}
+
+.catalog-sub-item:not(.is-hovered-row) {
+  white-space: nowrap;
+}
+
+.catalog-sub-item.is-hovered-row {
+  white-space: nowrap;
+}
+
+.catalog-sub-item.is-active-row + .catalog-sub-item {
+  margin-top: 0;
+}
+
+.catalog-sub-item:focus-visible {
+  outline: 2px solid rgba(82, 82, 82, 0.5);
+  outline-offset: 2px;
+}
+
+.catalog-sub-item.is-hovered-row:focus-visible {
+  outline-offset: -2px;
+}
+
+.catalog-sub-item {
+  border: 0;
+  background: transparent;
+  appearance: none;
+}
+
+@keyframes catalog-narrow-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.home-header {
+  position: relative;
+  z-index: 7;
+  width: 100%;
+  height: 105px;
+  padding: 0;
+}
+
+.header-actions {
+  position: absolute;
+  right: 45px;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 83px;
+}
+
+.icon-button {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.menu-trigger-button {
+  position: absolute;
+  left: 24px;
+  top: 20px;
+  width: 65px;
+  height: 65px;
+}
+
+.menu-trigger-button img {
+  filter: brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(0%) hue-rotate(154deg)
+    brightness(93%) contrast(90%);
+}
+
+.home-page.menu-open .home-header .menu-trigger-button img {
+  opacity: 0;
+}
+
+.icon-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.search-pill,
+.login-button {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(123, 123, 123, 0.25);
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.search-pill {
+  position: absolute;
+  left: 661px;
+  top: 20px;
+  width: 650px;
+  height: 64px;
+  font-size: 32px;
+  color: #fff;
+}
+
+.search-pill-input {
+  padding: 0 24px;
+  outline: none;
+  cursor: text;
+  text-align: center;
+  line-height: 64px;
+  color: #fff;
+  caret-color: #fff;
+}
+
+.search-pill-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.header-panel-logo {
+  position: absolute;
+  left: 136px;
+  top: 16px;
+  width: 176px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.header-panel-logo-button {
+  position: absolute;
+  left: 136px;
+  top: 0;
+  width: 176px;
+  height: 72px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Ящик каталога выше шапки (z-index 7), чтобы логотип не перекрывал серую колонку */
+.home-page.menu-open .catalog-drawer {
+  z-index: 8;
+}
+
+.login-button {
+  width: 152px;
+  height: 64px;
+  padding: 0;
+  box-sizing: border-box;
+  color: #fff;
+  font-size: 30px;
+}
+
+.hero-brand {
+  position: absolute;
+  left: calc(((100vw - (var(--design-width) * 1px * var(--design-scale))) / 2) + (654px * var(--design-scale)));
+  top: calc(((100vh - (var(--design-height) * 1px * var(--design-scale))) / 2) + (315px * var(--design-scale)));
+  width: calc(664px * var(--design-scale));
+  height: calc(354px * var(--design-scale));
+}
+
+.hero-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.profile-screen {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+.profile-logo {
+  position: absolute;
+  left: 772px;
+  top: 36px;
+  width: 356px;
+  height: 214px;
+}
+
+.profile-logo-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.profile-logo-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+
+.profile-logo-image {
+  display: block;
+  width: 100%;
+  height: 115%;
+  object-fit: contain;
+}
+
+.profile-name-card {
+  position: absolute;
+  left: 816px;
+  top: 301px;
+  width: 269px;
+  height: 74px;
+  border-radius: 36px;
+  background: rgba(217, 217, 217, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 25px;
+  line-height: 1.64;
+}
+
+.profile-loyalty-card {
+  position: absolute;
+  left: 635px;
+  top: 445px;
+  width: 630px;
+  height: 447px;
+  border-radius: 25px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.profile-discount-head {
+  position: absolute;
+  left: 53px;
+  top: 36px;
+  width: 556px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+}
+
+.profile-discount-head > span {
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 64px;
+  line-height: 1.46875;
+}
+
+.profile-buyout {
+  width: 223px;
+  height: 100px;
+  border-radius: 104px;
+  background: rgba(42, 42, 42, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-buyout span {
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 50px;
+  line-height: 1.2;
+}
+
+.profile-progress {
+  position: absolute;
+  left: 40px;
+  top: 223px;
+  width: 550px;
+  height: 31px;
+  border-radius: 100px;
+  background: #00000026;
+  overflow: hidden;
+}
+
+.profile-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 100px;
+  background: rgb(0 0 0 / 35%);
+  z-index: 0;
+}
+
+.profile-progress-step {
+  position: absolute;
+  top: 0;
+  height: 30.44px;
+  background: rgb(0 0 0 / 25%);
+  border-radius: 100px;
+  z-index: 1;
+}
+
+.profile-progress-step.step-1 {
+  left: 100px;
+  width: 450px;
+}
+
+.profile-progress-step.step-2 {
+  left: 200px;
+  width: 350px;
+}
+
+.profile-progress-step.step-3 {
+  left: 300px;
+  width: 250px;
+}
+
+.profile-progress-step.step-4 {
+  left: 399.99px;
+  width: 150px;
+}
+
+.profile-progress-labels {
+  position: absolute;
+  left: 92px;
+  top: 195px;
+  width: 436px;
+  display: flex;
+  justify-content: space-between;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 2;
+}
+
+.profile-progress-labels.is-bottom {
+  left: 85px;
+  top: 254px;
+  width: 460px;
+  color: #7b7b7b;
+}
+
+.profile-progress-labels span.is-loyalty-milestone-passed {
+  color: #fff;
+  font-weight: 500;
+}
+
+.profile-progress-labels.is-bottom span.is-loyalty-milestone-passed {
+  color: #c8c8c8;
+  font-weight: 500;
+}
+
+.profile-loyalty-text {
+  position: absolute;
+  left: 93px;
+  top: 313px;
+  width: 445px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 20px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.profile-details-card,
+.profile-orders-card,
+.profile-support-card {
+  position: absolute;
+  border-radius: 25px;
+  background: rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.profile-details-card {
+  left: 631px;
+  top: 432px;
+  width: 630px;
+  height: 473px;
+}
+
+.profile-details-field {
+  position: absolute;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.profile-details-field.is-emphasized {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.details-name {
+  left: 40px;
+  top: 52px;
+  width: 551px;
+  height: 64px;
+}
+
+.details-surname {
+  left: 40px;
+  top: 142px;
+  width: 551px;
+  height: 58px;
+}
+
+.details-email {
+  left: 40px;
+  top: 220px;
+  width: 551px;
+  height: 64px;
+}
+
+.details-phone {
+  left: 40px;
+  top: 295px;
+  width: 313px;
+  height: 66px;
+}
+
+.details-birthday {
+  left: 387px;
+  top: 295px;
+  width: 204px;
+  height: 66px;
+}
+
+.details-label {
+  position: absolute;
+  margin: 0;
+  color: #cfcfcf;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  text-align: center;
+}
+
+.details-label-small {
+  left: 14px;
+  top: 0;
+  font-size: 13px;
+  line-height: 3.1538461538;
+}
+
+.details-label-surname {
+  left: 14px;
+  top: 9px;
+  color: #b1b1b1;
+  font-size: 20px;
+  line-height: 2.05;
+}
+
+.details-value {
+  position: absolute;
+  left: 14px;
+  top: 20px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 2.05;
+  text-align: center;
+}
+
+.details-value-regular {
+  font-weight: 400;
+}
+
+.details-input {
+  position: absolute;
+  left: 14px;
+  top: 20px;
+  width: calc(100% - 28px);
+  height: 41px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 2.05;
+  padding: 0;
+}
+
+.details-input-surname {
+  top: 9px;
+  color: #fff;
+}
+
+.details-input::placeholder {
+  color: #b1b1b1;
+}
+
+.profile-details-save {
+  position: absolute;
+  left: 239px;
+  top: 378px;
+  width: 152px;
+  height: 49px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 2.05;
+  cursor: pointer;
+}
+
+.profile-details-save:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.profile-details-save-feedback {
+  position: absolute;
+  left: 239px;
+  top: 434px;
+  margin: 0;
+  max-width: 280px;
+  color: #c4c4c4;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.profile-orders-card {
+  left: 479px;
+  top: 443px;
+  width: 942px;
+  height: 516px;
+  padding: 22px 21px 16px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Одна панель в DOM за раз — без сдвоенного текста «пусто + заказ» и без двух колонок в a11y */
+.profile-orders-panel--visible {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-right: 6px;
+}
+
+.profile-orders-panel > .profile-order-block {
+  margin-top: 14px;
+}
+
+.profile-orders-panel > .profile-order-block:first-child {
+  margin-top: 2px;
+}
+
+.profile-orders-empty--in-card {
+  margin: auto 0;
+  padding: 32px 12px;
+  text-align: center;
+}
+
+.profile-orders-switch {
+  position: absolute;
+  left: 774px;
+  top: 384px;
+  width: 350px;
+  height: 47px;
+  border-radius: 100px;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+}
+
+.profile-orders-switch-btn {
+  flex: 1;
+  height: 47px;
+  border: 0;
+  border-radius: 100px;
+  background: transparent;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.3;
+  cursor: pointer;
+  transition:
+    background 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+    color 0.25s ease;
+}
+
+/* Не второй слой rgba(0,0,0,.25) поверх трека — иначе складывается альфа и «проваливается» темнее */
+.profile-orders-switch-btn.is-active {
+  background: rgba(255, 255, 255, 0.14);
+  font-weight: 500;
+}
+
+.profile-order-block {
+  position: relative;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 28px 28px 20px;
+  min-height: 200px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-sizing: border-box;
+}
+
+.profile-order-block.is-completed-layout {
+  min-height: 200px;
+  padding-bottom: 22px;
+}
+
+.profile-order-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin: 0 0 14px;
+  flex-shrink: 0;
+}
+
+.profile-order-title {
+  margin: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 32px;
+  line-height: 1.3;
+}
+
+.profile-order-items {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 8px;
+}
+
+.profile-order-items.is-active-grid {
+  grid-template-columns: repeat(4, 115px);
+  gap: 31px;
+}
+
+.profile-order-items.is-compact {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.profile-order-items.is-compact .profile-order-item {
+  flex: 0 0 115px;
+  width: 115px;
+  min-width: 115px;
+}
+
+.profile-order-item {
+  height: 115px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 15px;
+  line-height: 1.4;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-order-item-image {
+  position: absolute;
+  left: 9px;
+  top: 6px;
+  width: 97px;
+  height: 77px;
+  background: center / contain no-repeat;
+}
+
+.profile-order-item-price {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 5px;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.profile-order-status {
+  width: 131px;
+  height: 30px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 20px;
+  line-height: 1.05;
+  text-align: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-order-status.is-completed {
+  width: 131px;
+  color: #fff;
+  background: rgba(35, 35, 35, 0.35);
+}
+
+.profile-orders-empty {
+  margin: 24px 0 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 330;
+  font-size: 24px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.profile-orders-empty-state {
+  margin: 0 auto;
+  width: 630px;
+  height: 394px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 76px;
+  box-sizing: border-box;
+}
+
+.profile-orders-empty-state.is-standalone {
+  position: absolute;
+  left: 635px;
+  top: 465px;
+}
+
+.profile-orders-empty-title {
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 48px;
+  line-height: 26px;
+  text-align: center;
+}
+
+.profile-orders-empty-subtitle {
+  width: 527px;
+  margin: 24px 0 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 20px;
+  line-height: 26px;
+  text-align: center;
+}
+
+.profile-orders-empty-btn {
+  margin-top: 46px;
+  width: 222px;
+  height: 71px;
+  border: 0;
+  border-radius: 72px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 26px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.checkout-error-text {
+  position: absolute;
+  left: 50%;
+  top: 812px;
+  width: min(400px, calc(100% - 48px));
+  margin: 0;
+  transform: translateX(-50%);
+  color: #ff9090;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.profile-support-card {
+  left: 635px;
+  top: 472px;
+  width: 630px;
+  height: 394px;
+  padding: 0;
+}
+
+.profile-admin-card {
+  position: absolute;
+  left: 300px;
+  top: 276px;
+  width: 1300px;
+  /* ASCII hyphen in calc only — long dash "—" breaks the rule in DevTools */
+  height: min(664px, calc(100vh - 320px));
+  border-radius: 25px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.profile-support-free-title,
+.profile-support-mail-title {
+  position: absolute;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.28125;
+  text-align: center;
+}
+
+.profile-support-free-title {
+  left: 126px;
+  top: 62px;
+  width: 378px;
+}
+
+.profile-support-mail-title {
+  left: 175px;
+  top: 209px;
+  width: 280px;
+}
+
+.profile-support-phone,
+.profile-support-email {
+  position: absolute;
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.7083333333;
+  text-align: center;
+}
+
+.profile-support-phone {
+  left: 214px;
+  top: 114px;
+  width: 202px;
+}
+
+.profile-support-email {
+  left: 214px;
+  top: 261px;
+  width: 202px;
+}
+
+.profile-support-note-top,
+.profile-support-note-bottom {
+  position: absolute;
+  margin: 0;
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 2.5625;
+  text-align: center;
+}
+
+.profile-support-note-top {
+  left: 184px;
+  top: 144px;
+  width: 262px;
+}
+
+.profile-support-note-bottom {
+  left: 163px;
+  top: 291px;
+  width: 305px;
+}
+
+.profile-logout-card {
+  position: absolute;
+  left: 670px;
+  top: 470px;
+  width: 567px;
+  height: 383px;
+  border-radius: 25px;
+  background: #00000040;
+  box-sizing: border-box;
+  padding: 52px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-logout-title {
+  margin: 0;
+  max-width: 480px;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 300;
+  font-size: 36px;
+  line-height: 1.2;
+}
+
+.profile-logout-note {
+  margin: 24px 0 0;
+  max-width: 420px;
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.profile-logout-yes-btn {
+  margin-top: auto;
+  width: min(280px, 100%);
+  height: 56px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 500;
+  font-size: 28px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.profile-logout-yes-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.profile-tabs {
+  position: absolute;
+  left: 403px;
+  top: 962px;
+  width: 1065px;
+  height: 68px;
+  z-index: 3;
+}
+
+.profile-tab {
+  position: absolute;
+  top: 0;
+  border: 0;
+  background: transparent;
+  color: #7b7b7b;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 25px;
+  line-height: 1.64;
+  cursor: pointer;
+  padding: 0;
+  height: 68px;
+  border-radius: 36px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.profile-tab-active {
+  position: relative;
+  color: #fff;
+  background: transparent;
+}
+
+.profile-tab-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--active-pad-left, 0px));
+  width: calc(100% + var(--active-pad-left, 0px) + var(--active-pad-right, 0px));
+  height: 68px;
+  border-radius: 36px;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: -1;
+}
+
+.profile-tab-loyalty {
+  left: 0;
+  width: 319px;
+  --active-pad-left: 0px;
+  --active-pad-right: 0px;
+}
+
+.profile-tab-details {
+  left: 368px;
+  width: 175px;
+  --active-pad-left: 35px;
+  --active-pad-right: 36px;
+}
+
+.profile-tab-orders {
+  left: 622px;
+  width: 85px;
+  --active-pad-left: 44px;
+  --active-pad-right: 44px;
+}
+
+.profile-tab-support {
+  left: 786px;
+  width: 130px;
+  --active-pad-left: 31px;
+  --active-pad-right: 26px;
+}
+
+/* Сдвиг влево + отступы подсветки, чтобы плашка не была 70px и не вылезала за nav (1065px) */
+.profile-tab-logout {
+  left: 971px;
+  width: 70px;
+  --active-pad-left: 24px;
+  --active-pad-right: 24px;
+}
+
+.profile-tab:not(.profile-tab-active):hover {
+  color: #b3b3b3;
+}
+
+.admin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.admin-title {
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 1.2;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.admin-tab-btn {
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 20px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.admin-tab-btn.is-active {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.admin-products-section {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 16px;
+}
+
+.admin-product-form {
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 14px;
+}
+
+.admin-form-title {
+  margin: 0 0 10px;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 24px;
+}
+
+.admin-image-block {
+  margin-bottom: 8px;
+}
+
+.admin-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-image-actions {
+  margin-bottom: 8px;
+}
+
+.admin-image-preview {
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.admin-input,
+.admin-textarea,
+.admin-select {
+  width: 100%;
+  height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #181818;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 16px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+}
+
+.admin-textarea {
+  height: 90px;
+  resize: vertical;
+  padding-top: 8px;
+}
+
+.admin-form-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-form-row-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-field-label {
+  display: block;
+  margin: 8px 0 4px;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-field-label-inline {
+  margin-top: 4px;
+}
+
+.admin-field-hint {
+  margin: 4px 0 10px;
+  font-size: 13px;
+}
+
+.admin-help {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.82);
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-help strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.admin-code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.admin-field-label-numeric-row {
+  margin-top: 12px;
+}
+
+.admin-numeric-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-micro-label {
+  margin: 0 0 1px 2px;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-products-list,
+.admin-orders-section,
+.admin-users-list {
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 14px;
+}
+
+.admin-product-card,
+.admin-order-card,
+.admin-user-card {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.admin-product-image {
+  width: 88px;
+  height: 88px;
+  border-radius: 10px;
+  background: center / contain no-repeat;
+}
+
+.admin-product-name {
+  margin: 0 0 4px;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 20px;
+}
+
+.admin-product-meta,
+.admin-order-meta,
+.admin-muted,
+.admin-error {
+  margin: 0;
+  color: #c8c8c8;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+
+.admin-order-meta {
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.admin-error {
+  color: #ff9696;
+  margin-bottom: 10px;
+}
+
+.admin-product-actions,
+.admin-order-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-btn {
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 15px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.admin-btn.is-secondary {
+  background: rgba(123, 123, 123, 0.35);
+}
+
+.admin-btn.is-danger {
+  background: rgba(135, 30, 30, 0.7);
+}
+
+.admin-order-card {
+  grid-template-columns: 1fr;
+}
+
+.admin-users-section {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 16px;
+}
+
+.admin-user-form {
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 14px;
+}
+
+.admin-form-row.is-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-user-card {
+  grid-template-columns: 1fr auto;
+}
+
+.admin-user-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-order-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-order-title {
+  margin: 0;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 24px;
+}
+
+.admin-order-items {
+  margin-top: 8px;
+}
+
+.admin-order-item {
+  display: grid;
+  grid-template-columns: 1fr 60px 130px;
+  gap: 8px;
+  color: #fff;
+  font-family: "Kreadon", "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 900px) {
+  .catalog-drawer {
+    width: min(74vw, 22.5rem);
+  }
+
+  .auth-modal {
+    left: 50%;
+    top: 50%;
+    width: min(92vw, 502px);
+    transform: translate(-50%, -50%);
+  }
+
+  .store-figma-panel {
+    --panel-top-offset: 106px;
+    transform: translateX(-50%)
+      scale(
+        min(
+          1,
+          calc((100vw - 20px) / (var(--panel-base-width) * 1px)),
+          calc((100vh - 120px) / (var(--panel-base-height) * 1px))
+        )
+      );
+  }
+
+  .store-figma-panel.is-cart-full {
+    --panel-base-width: 1102;
+  }
+
+  .auth-title {
+    width: calc(100% - 100px);
+    font-size: 32px;
+  }
+
+  .auth-title-register {
+    width: calc(100% - 80px);
+  }
+
+  .auth-title-code {
+    width: calc(100% - 130px);
+  }
+
+  .auth-input-wrap {
+    width: calc(100% - 86px);
+  }
+
+  .auth-field {
+    width: calc(100% - 86px);
+  }
+
+  .auth-field-gender {
+    width: calc(100% - 86px);
+    left: 44px;
+  }
+
+  .auth-code-email {
+    width: calc(100% - 48px);
+    max-width: none;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .auth-code-grid {
+    width: calc(100% - 74px);
+    left: 37px;
+  }
+
+  .auth-code-timer,
+  .auth-code-resend {
+    width: calc(100% - 48px);
+    max-width: none;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .auth-secondary-code {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .auth-code-cell {
+    width: calc((100% - 27px) / 4);
+  }
+
+  .catalog-main-panel {
+    width: 100%;
+  }
+
+  .catalog-drawer--expanded {
+    width: min(100%, 22.5rem);
+  }
+
+  .catalog-drawer-split {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .catalog-drawer--expanded .catalog-main-panel {
+    width: 100%;
+    border-radius: 0;
+    background: rgba(217, 217, 217, 0.65);
+  }
+
+  .catalog-drawer--expanded .catalog-sub-column {
+    position: relative;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    width: 100% !important;
+    height: auto;
+    border-radius: 0;
+    transform: none;
+  }
+
+  .catalog-sub-column {
+    min-width: 0 !important;
+    width: 100%;
+    padding: 0 12px 16px !important;
+  }
+
+  .catalog-grid-page {
+    display: block;
+    height: auto;
+    padding-left: 12px;
+  }
+
+  .catalog-nav-grid {
+    display: block;
+  }
+
+  .catalog-list.catalog-list--grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .catalog-sub-list.catalog-list--grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .catalog-sub-list li {
+    grid-row: auto !important;
+  }
+
+  .catalog-header {
+    position: static;
+    margin: 0 0 1.25rem;
+    padding-top: 0;
+    display: block;
+    width: auto;
+    height: auto;
+  }
+
+  .catalog-sub-heading {
+    padding-top: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .catalog-menu-button {
+    display: none;
+  }
+
+  .catalog-list:not(.catalog-list--grid) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: auto;
+  }
+
+  .catalog-item {
+    position: static;
+    grid-row: auto !important;
+    left: 0;
+    width: 100%;
+  }
+
+  .catalog-item-button {
+    padding: 0.25rem 0.2rem;
+    font-size: 1.75rem;
+  }
+
+  .catalog-arrow {
+    font-size: 2rem;
+  }
+
+  .home-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    padding: 16px;
+    z-index: 7;
+  }
+
+  .search-pill {
+    order: 2;
+    flex: 1 0 100%;
+    min-width: 0;
+    width: 100%;
+    height: 56px;
+    font-size: 24px;
+  }
+
+  .header-actions {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .login-button {
+    width: auto;
+    min-width: 132px;
+    height: 56px;
+    padding: 0 22px;
+    font-size: 28px;
+  }
+
+  .hero-brand {
+    width: min(90vw, 36rem);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -45%);
+  }
+
+  .profile-screen {
+    transform: scale(0.7);
+    transform-origin: top center;
+  }
+}
