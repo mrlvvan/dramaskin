@@ -1,11 +1,9 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 
-/** Origin API без суффикса /api — для статики загрузок (/uploads/...) */
 export function getApiAssetOrigin(): string {
   return API_BASE_URL.replace(/\/api\/?$/i, "");
 }
 
-/** Путь картинки товара: абсолютный URL, /uploads/... с API-хоста, иначе как есть (например /krem1.png с фронта) */
 export function resolveProductImageUrl(imageUrl: string | null | undefined, fallback = "/krem1.png"): string {
   const raw = String(imageUrl ?? "").trim();
   const u = raw || fallback;
@@ -28,7 +26,7 @@ async function parseErrorMessage(response: Response) {
     const data = (await response.json()) as { message?: string };
     if (data?.message) message = data.message;
   } catch {
-    // ignore json parse errors and keep fallback message
+    /* ignored */
   }
   return message;
 }
@@ -65,7 +63,6 @@ async function refreshAccessToken() {
   return refreshPromise;
 }
 
-/** POST multipart с тем же refresh по 401, что и apiRequest (без Content-Type — задаст браузер) */
 export async function authenticatedUpload(path: string, formData: FormData): Promise<Response> {
   const accessToken = localStorage.getItem("dramma_access_token");
   const headers: Record<string, string> = {};

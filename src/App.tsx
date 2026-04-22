@@ -25,6 +25,7 @@ import {
   searchProducts,
   type CatalogCategory,
   type CatalogProduct,
+  type CatalogProductColorVariant,
 } from './api/catalog'
 import {
   createOrder,
@@ -36,6 +37,7 @@ import { patchMe } from './api/auth'
 import { confirmLoginCode, restoreSession, sendLoginCode, signOut } from './lib/authFlow'
 import { useAuthStore } from './store/authStore'
 import { resolveProductImageUrl } from './api/client'
+import brayeLipsleekVariantsJson from './data/braye-lipsleek-variants.json'
 import './App.css'
 
 function productImageCssUrl(imageUrl: string | null | undefined): string {
@@ -52,17 +54,11 @@ type CatalogFilter =
       subcategory: string
     }
   | null
-/**
- * Сколько строк данных в сетке каталога (под «Каталог» + подкатегории справа).
- * Должно совпадать с max длиной `items` в SUBCATEGORY_MAP (сейчас 7 у «Основной уход»).
- * Шаг и высота шапки задаются в CSS: `.catalog-grid-page`.
- */
+
 const CATALOG_GRID_DATA_ROWS = 7
 
-/** Горизонтальный сдвиг полосы hover у подпункта (`--item-x` в CSS). */
 const SUBCATEGORY_ITEM_X_PX = 14
 
-/** Ширина одного «слайда» текста на карточке товара (как у `.product-figma-text` / блока details). */
 const PRODUCT_FIGMA_TEXT_SLIDE_PX = 1056
 
 function productTabSlideIndex(tab: 'description' | 'characteristics' | 'composition'): number {
@@ -172,6 +168,75 @@ function formatIsoDateRu(iso: string): string {
   return `${d.padStart(2, '0')}.${m.padStart(2, '0')}.${y}`
 }
 
+type SearchSuccessColorVariant = {
+  id: string
+  hex: string
+  label?: string
+  /** Круглый свотч: фото панели оттенка (как в макете бренда), иначе заливка `hex` */
+  swatchImageUrl?: string
+  imageUrl?: string
+  imageClassName?: string
+  price?: string
+  stock?: number
+  productId?: number
+}
+
+/** Демо и сид: оттенки (id, label, hex) из `src/data/braye-lipsleek-variants.json` — круги на карточке; главное фото — `imageUrl` товара. */
+const BRAYE_LIPSLEEK_COLOR_VARIANTS = brayeLipsleekVariantsJson as SearchSuccessColorVariant[]
+
+function coerceCatalogColorVariantEntry(entry: unknown): CatalogProductColorVariant | null {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null
+  const o = entry as Record<string, unknown>
+  const id = typeof o.id === 'string' ? o.id : ''
+  const hex = typeof o.hex === 'string' ? o.hex : ''
+  if (!id || !hex) return null
+  return {
+    id,
+    hex,
+    label: typeof o.label === 'string' ? o.label : undefined,
+    swatchImageUrl: typeof o.swatchImageUrl === 'string' ? o.swatchImageUrl : undefined,
+    imageUrl: typeof o.imageUrl === 'string' ? o.imageUrl : undefined,
+    imageClassName: typeof o.imageClassName === 'string' ? o.imageClassName : undefined,
+    price: typeof o.price === 'string' ? o.price : undefined,
+    stock: typeof o.stock === 'number' && Number.isFinite(o.stock) ? o.stock : undefined,
+    productId: typeof o.productId === 'number' && Number.isFinite(o.productId) ? o.productId : undefined,
+  }
+}
+
+/** Для карточки/поиска: несколько оттенков (2+), иначе без переключателя. */
+function normalizeCatalogColorVariants(raw: unknown): SearchSuccessColorVariant[] | undefined {
+  if (!raw || !Array.isArray(raw) || raw.length < 2) return undefined
+  const out: SearchSuccessColorVariant[] = []
+  for (const entry of raw) {
+    const v = coerceCatalogColorVariantEntry(entry)
+    if (v) out.push(v)
+  }
+  return out.length > 1 ? out : undefined
+}
+
+/** Для сохранения в админке: как минимум один валидный объект (как на бэкенде). */
+function normalizeColorVariantsArrayLoose(parsed: unknown): CatalogProductColorVariant[] {
+  if (!Array.isArray(parsed)) {
+    throw new Error('Оттенки: нужен JSON-массив объектов { id, hex, … }')
+  }
+  const out: CatalogProductColorVariant[] = []
+  for (const entry of parsed) {
+    const v = coerceCatalogColorVariantEntry(entry)
+    if (v) out.push(v)
+  }
+  if (out.length === 0) {
+    throw new Error('В массиве нет ни одного объекта с непустыми id и hex')
+  }
+  return out
+}
+
+function parseAdminColorVariantsField(text: string): CatalogProductColorVariant[] | null {
+  const trimmed = text.trim()
+  if (trimmed === 'null') return null
+  const parsed: unknown = JSON.parse(trimmed)
+  return normalizeColorVariantsArrayLoose(parsed)
+}
+
 const SEARCH_SUCCESS_ITEMS = [
   {
     id: 'search-1',
@@ -208,6 +273,24 @@ const SEARCH_SUCCESS_ITEMS = [
     cardClassName: ' is-second',
     priceClassName: ' is-second',
   },
+  {
+    id: 'search-braye',
+    title: 'Макияж',
+    productName: 'Компактный вельветовый бальзам для губ и щёк BRAYE',
+    description: 'Компактный вельветовый бальзам для губ и щёк BRAYE',
+    detailsText:
+      'Вельветовая текстура бальзама BRAYE мягко пигментирует губы и щёки, даёт ровное покрытие и комфорт в течение дня. Компактный формат удобно носить с собой.',
+    characteristicsText:
+      'Производитель: BRAYE\nЛинейка: LIPSLEEK (лип-бальзам для губ и щёк)\nОбъём: 2,3 г\nОттенки: 01 ARDOR, 02 RORTY, 03 POSH, 04 SAVVY, 05 EASE, 06 PLUCKY, 07 BOLDNESS, 08 ROUGHLY, 09 COOLNESS, 10 CLEAR\nСтрана: Южная Корея',
+    compositionText: 'Состав уточняется на упаковке.',
+    volume: '2,3 г',
+    price: '1 800 ₽',
+    imageUrl: '/krem1.png',
+    imageClassName: '',
+    cardClassName: '',
+    priceClassName: '',
+    colorVariants: BRAYE_LIPSLEEK_COLOR_VARIANTS,
+  },
 ]
 
 type SearchSuccessItem = {
@@ -226,6 +309,7 @@ type SearchSuccessItem = {
   imageClassName: string
   cardClassName: string
   priceClassName: string
+  colorVariants?: SearchSuccessColorVariant[]
 }
 type AppView = 'home' | 'catalog-list'
 
@@ -233,14 +317,12 @@ function formatPrice(price: number) {
   return `${price.toLocaleString('ru-RU')} ₽`
 }
 
-/** Сумма заказа из API (строка) → рубли. */
 function parseOrderTotalRub(totalAmount: string): number {
   const s = String(totalAmount).trim().replace(/\s/g, '').replace(',', '.')
   const n = Number.parseFloat(s)
   return Number.isFinite(n) ? Math.max(0, n) : 0
 }
 
-/** Пороги лояльности: накопленная сумма завершённых заказов → текущий % (целое число). */
 const LOYALTY_TIER_THRESHOLDS_DESC = [
   { minRub: 30_000, percent: 30 },
   { minRub: 15_000, percent: 15 },
@@ -315,7 +397,6 @@ const CHECKOUT_FORM_EMPTY: CheckoutFormState = {
   comment: '',
 }
 
-/** Доставка и контакты для списка заказов (профиль / админка) */
 function formatOrderDeliverySummary(order: ApiOrder): string {
   const extra = [order.apartment, order.entrance, order.floor, order.intercom].filter(
     (x) => x != null && String(x).trim() !== '',
@@ -387,7 +468,6 @@ const PRODUCT_FORM_INITIAL: AdminProductPayload = {
   isPublished: true,
 }
 
-/** Склонение для строки «N продукт(а/ов)» — как в макете Figma «Корзина FULL». */
 function formatProductCountRu(n: number): string {
   const mod10 = n % 10
   const mod100 = n % 100
@@ -397,7 +477,6 @@ function formatProductCountRu(n: number): string {
   return `${n} продуктов`
 }
 
-/** Строка объёма для корзины (как в макете), без длинного описания. */
 function formatCartVolumeMl(product: CatalogProduct): string | null {
   const fromChars = product.characteristics?.match(/Объ[её]м\s*\(\s*мл\s*\)\s*:\s*(\d+)/i)
   if (fromChars?.[1]) return `${fromChars[1]} мл`
@@ -417,7 +496,7 @@ function mapProductToSearchItem(product: CatalogProduct): SearchSuccessItem {
     .filter(Boolean)
     .join('\n')
 
-  return {
+  const base: SearchSuccessItem = {
     id: `product-${product.id}`,
     productId: product.id,
     title: product.subcategory || categoryName,
@@ -439,6 +518,16 @@ function mapProductToSearchItem(product: CatalogProduct): SearchSuccessItem {
     cardClassName: '',
     priceClassName: '',
   }
+
+  const colorVariants = normalizeCatalogColorVariants(product.colorVariants)
+  if (colorVariants) {
+    return {
+      ...base,
+      colorVariants,
+    }
+  }
+
+  return base
 }
 
 function App() {
@@ -449,13 +538,11 @@ function App() {
   const [hoveredSubItem, setHoveredSubItem] = useState<string | null>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'code'>('login')
-  /** Куда вернуться с экрана кода («Сменить почту»): тот же шаг, откуда запросили код */
   const [authReturnMode, setAuthReturnMode] = useState<'login' | 'register'>('login')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginEmailError, setLoginEmailError] = useState(false)
   const [codeDigits, setCodeDigits] = useState(['', '', '', ''])
   const [codeStatus, setCodeStatus] = useState<'idle' | 'error' | 'success'>('idle')
-  /** Секунды до кнопки «Отправить повторно» (старт 60 при переходе на шаг кода) */
   const [authCodeResendRemainingSec, setAuthCodeResendRemainingSec] = useState(0)
   const authUser = useAuthStore((state) => state.user)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -488,7 +575,6 @@ function App() {
     | 'product-card'
     | null
   >(null)
-  /** Панель store до открытия карточки товара — для возврата по крестику / backdrop */
   const panelBeforeProductRef = useRef<
     | 'favorites-empty'
     | 'favorites-full'
@@ -503,6 +589,7 @@ function App() {
   const [selectedSearchItem, setSelectedSearchItem] = useState<SearchSuccessItem | null>(null)
   const [productTab, setProductTab] = useState<'description' | 'characteristics' | 'composition'>('description')
   const [productQtyById, setProductQtyById] = useState<Record<string, number>>({})
+  const [productCardVariantId, setProductCardVariantId] = useState<string | null>(null)
   const [isAuthLoading, setIsAuthLoading] = useState(false)
   const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<SearchSuccessItem[]>(SEARCH_SUCCESS_ITEMS)
@@ -515,7 +602,6 @@ function App() {
   const [favoritesLoading, setFavoritesLoading] = useState(false)
   const [orders, setOrders] = useState<ApiOrder[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
-  /** После первого ответа getMyOrders — чтобы не мигать «карточка заказов» → «пусто» при смене вкладки */
   const [ordersReady, setOrdersReady] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [checkoutForm, setCheckoutForm] = useState<CheckoutFormState>(CHECKOUT_FORM_EMPTY)
@@ -530,6 +616,7 @@ function App() {
   const [editingProductId, setEditingProductId] = useState<number | null>(null)
   const [editingUserId, setEditingUserId] = useState<number | null>(null)
   const [adminProductForm, setAdminProductForm] = useState<AdminProductPayload>(PRODUCT_FORM_INITIAL)
+  const [adminProductColorVariantsJson, setAdminProductColorVariantsJson] = useState('')
   const [adminUserForm, setAdminUserForm] = useState({
     email: '',
     firstName: '',
@@ -588,7 +675,6 @@ function App() {
     () => orders.filter((order) => order.status === 'COMPLETED' || order.status === 'CANCELLED'),
     [orders],
   )
-  /** Только завершённые (оплаченные/закрытые) — в выкуп и лояльность, отмены не считаем. */
   const loyaltyBuyoutTotalRub = useMemo(
     () =>
       orders
@@ -602,6 +688,34 @@ function App() {
   )
   const hasAnyOrders = orders.length > 0
   const isAdmin = authUser?.role === 'ADMIN'
+  const productCardDisplay = useMemo(() => {
+    const item = selectedSearchItem
+    if (!item) return null
+    const variants = item.colorVariants
+    const hasColorChoice = Boolean(variants && variants.length > 1)
+    const selectedVariant =
+      hasColorChoice && variants
+        ? variants.find((v) => v.id === productCardVariantId) ?? variants[0]
+        : null
+    const displayImageUrl = item.imageUrl
+    const displayImageClassName = item.imageClassName
+    const displayPrice = selectedVariant?.price ?? item.price
+    const displayStock = selectedVariant?.stock ?? item.stock
+    const displayProductId = selectedVariant?.productId ?? item.productId
+    const cartQtyKey = displayProductId != null ? `product-${displayProductId}` : item.id
+    return {
+      item,
+      hasColorChoice,
+      colorVariants: variants ?? [],
+      selectedVariant,
+      displayImageUrl,
+      displayImageClassName,
+      displayPrice,
+      displayStock,
+      displayProductId,
+      cartQtyKey,
+    }
+  }, [selectedSearchItem, productCardVariantId])
   const openProductCard = (item: SearchSuccessItem) => {
     setActiveHeaderPanel((prev) => {
       if (prev !== 'product-card') {
@@ -610,6 +724,8 @@ function App() {
       return 'product-card'
     })
     setSelectedSearchItem(item)
+    const cv = item.colorVariants
+    setProductCardVariantId(cv && cv.length > 1 ? cv[0].id : null)
     setProductTab('description')
   }
   const isEmailValid = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
@@ -623,6 +739,7 @@ function App() {
   const adminResetForm = () => {
     setEditingProductId(null)
     setAdminProductForm(PRODUCT_FORM_INITIAL)
+    setAdminProductColorVariantsJson('')
   }
   const adminResetUserForm = () => {
     setEditingUserId(null)
@@ -689,6 +806,9 @@ function App() {
       composition: product.composition || '',
       isPublished: product.isPublished,
     })
+    setAdminProductColorVariantsJson(
+      product.colorVariants != null ? JSON.stringify(product.colorVariants, null, 2) : '',
+    )
   }
   const adminStartEditUser = (user: AdminUser) => {
     setEditingUserId(user.id)
@@ -764,7 +884,6 @@ function App() {
     setActiveHeaderPanel(null)
   }
 
-  /** Закрыть любые оверлеи шапки без «возврата» в карточку товара — перед открытием меню каталога. */
   const dismissAllStorePanelsForMenu = () => {
     panelBeforeProductRef.current = null
     setSelectedSearchItem(null)
@@ -1473,7 +1592,7 @@ function App() {
         </>
       ) : null}
 
-      {isCatalogOpen ? (
+      {isCatalogOpen && !isProfileOpen ? (
         <>
           <button
             type="button"
@@ -1547,9 +1666,7 @@ function App() {
 
               return activeSubcategory ? (
                 <div className="catalog-drawer-split">
-                  {/* Секция 1: список разделов каталога (ширина — CSS --catalog-main-width) */}
                   <section className="catalog-main-panel">{catalogGridPage}</section>
-                  {/* Секция 2: подкатегории выбранного раздела (отдельная колонка грида) */}
                   <section
                     className="catalog-sub-column"
                     aria-label={`Подкатегории ${activeSubcategory.title}`}
@@ -1613,7 +1730,7 @@ function App() {
         </>
       ) : null}
 
-      {activeHeaderPanel ? (
+      {activeHeaderPanel && !isProfileOpen ? (
         <>
           <button
             type="button"
@@ -1691,7 +1808,7 @@ function App() {
                             setActiveHeaderPanel('favorites-empty')
                           }
                         } catch {
-                          // сеть — не трогаем список
+                          /* ignored */
                         }
                       }}
                     >
@@ -1739,23 +1856,51 @@ function App() {
               </div>
             ) : null}
 
-            {activeHeaderPanel === 'product-card' && selectedSearchItem ? (
-              <div className="product-figma-layout">
+            {activeHeaderPanel === 'product-card' && productCardDisplay ? (
+              <div
+                className={`product-figma-layout${
+                  productCardDisplay.hasColorChoice ? ' product-figma-layout--with-colors' : ''
+                }`}
+              >
                 <div className="product-figma-image-wrap">
                   <div
-                    className={`product-figma-image${selectedSearchItem.imageClassName}`}
+                    className={`product-figma-image${productCardDisplay.displayImageClassName}`}
                     style={{
-                      backgroundImage: `url("${productImageCssUrl(selectedSearchItem.imageUrl)}")`,
+                      backgroundImage: `url("${productImageCssUrl(productCardDisplay.displayImageUrl)}")`,
                     }}
                   />
                 </div>
 
                 <p className="product-figma-head">О продукте</p>
-                <p className="product-figma-name">{selectedSearchItem.productName}</p>
+                <p className="product-figma-name">{productCardDisplay.item.productName}</p>
+
+                {productCardDisplay.hasColorChoice ? (
+                  <div
+                    className="product-figma-colors"
+                    role="radiogroup"
+                    aria-label="Оттенок"
+                  >
+                    {productCardDisplay.colorVariants.map((variant) => {
+                      const isSelected = productCardDisplay.selectedVariant?.id === variant.id
+                      return (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          className={`product-figma-color-swatch${isSelected ? ' is-selected' : ''}`}
+                          style={{ backgroundColor: variant.hex }}
+                          title={variant.label}
+                          onClick={() => setProductCardVariantId(variant.id)}
+                        />
+                      )
+                    })}
+                  </div>
+                ) : null}
 
                 <div className="product-figma-buy">
-                  <p className="product-figma-price">{selectedSearchItem.price}</p>
-                  {productQtyById[selectedSearchItem.id] ? (
+                  <p className="product-figma-price">{productCardDisplay.displayPrice}</p>
+                  {productQtyById[productCardDisplay.cartQtyKey] ? (
                     <>
                       <button type="button" className="product-figma-add-btn is-in-cart">
                         В корзине
@@ -1770,31 +1915,32 @@ function App() {
                               openLoginModal()
                               return
                             }
+                            const { cartQtyKey, displayProductId } = productCardDisplay
                             setProductQtyById((prev) => {
-                              const current = prev[selectedSearchItem.id] ?? 1
+                              const current = prev[cartQtyKey] ?? 1
                               const next = current - 1
                               if (next <= 0) {
-                                if (selectedSearchItem.productId) {
-                                  void removeCartItem(selectedSearchItem.productId)
+                                if (displayProductId) {
+                                  void removeCartItem(displayProductId)
                                     .then(() => getCart().then(setCartItems))
                                     .catch(() => null)
                                 }
                                 const updated = { ...prev }
-                                delete updated[selectedSearchItem.id]
+                                delete updated[cartQtyKey]
                                 return updated
                               }
-                              if (selectedSearchItem.productId) {
-                                void updateCartItem(selectedSearchItem.productId, next)
+                              if (displayProductId) {
+                                void updateCartItem(displayProductId, next)
                                   .then(() => getCart().then(setCartItems))
                                   .catch(() => null)
                               }
-                              return { ...prev, [selectedSearchItem.id]: next }
+                              return { ...prev, [cartQtyKey]: next }
                             })
                           }}
                         >
                           –
                         </button>
-                        <p className="product-figma-qty-value">{productQtyById[selectedSearchItem.id]} шт</p>
+                        <p className="product-figma-qty-value">{productQtyById[productCardDisplay.cartQtyKey]} шт</p>
                         <button
                           type="button"
                           className="product-figma-qty-btn is-plus"
@@ -1804,16 +1950,17 @@ function App() {
                               openLoginModal()
                               return
                             }
-                            const current = productQtyById[selectedSearchItem.id] ?? 1
-                            const maxQty = selectedSearchItem.stock ?? Number.MAX_SAFE_INTEGER
+                            const { cartQtyKey, displayStock, displayProductId } = productCardDisplay
+                            const current = productQtyById[cartQtyKey] ?? 1
+                            const maxQty = displayStock ?? Number.MAX_SAFE_INTEGER
                             if (current >= maxQty) return
                             const next = current + 1
                             setProductQtyById((prev) => ({
                               ...prev,
-                              [selectedSearchItem.id]: next,
+                              [cartQtyKey]: next,
                             }))
-                            if (selectedSearchItem.productId) {
-                              void updateCartItem(selectedSearchItem.productId, next)
+                            if (displayProductId) {
+                              void updateCartItem(displayProductId, next)
                                 .then(() => getCart().then(setCartItems))
                                 .catch(() => null)
                             }
@@ -1832,14 +1979,17 @@ function App() {
                           openLoginModal()
                           return
                         }
-                        if (!selectedSearchItem.productId) return
+                        if (!productCardDisplay.displayProductId) return
                         try {
-                          await addToCart(selectedSearchItem.productId, 1)
+                          await addToCart(productCardDisplay.displayProductId, 1)
                           const items = await getCart()
                           setCartItems(items)
-                          setProductQtyById((prev) => ({ ...prev, [selectedSearchItem.id]: 1 }))
+                          setProductQtyById((prev) => ({
+                            ...prev,
+                            [productCardDisplay.cartQtyKey]: 1,
+                          }))
                         } catch {
-                          // лимит остатка и др. — состояние не меняем
+                          /* ignored */
                         }
                       }}
                     >
@@ -1849,12 +1999,14 @@ function App() {
                   <button
                     type="button"
                     className={`product-figma-like-btn${
-                      selectedSearchItem.productId && isProductFavorite(selectedSearchItem.productId)
+                      productCardDisplay.displayProductId &&
+                      isProductFavorite(productCardDisplay.displayProductId)
                         ? ' is-in-favorites'
                         : ''
                     }`}
                     aria-label={
-                      selectedSearchItem.productId && isProductFavorite(selectedSearchItem.productId)
+                      productCardDisplay.displayProductId &&
+                      isProductFavorite(productCardDisplay.displayProductId)
                         ? 'Убрать из избранного'
                         : 'Добавить в избранное'
                     }
@@ -1865,7 +2017,7 @@ function App() {
                         openLoginModal()
                         return
                       }
-                      const pid = selectedSearchItem.productId
+                      const pid = productCardDisplay.displayProductId
                       if (!pid) return
                       try {
                         if (isProductFavorite(pid)) {
@@ -1876,7 +2028,7 @@ function App() {
                         const rows = await getFavorites()
                         setFavoriteProducts(rows.map((row) => row.product))
                       } catch {
-                        // игнорируем сетевые ошибки в UI
+                        /* ignored */
                       }
                     }}
                   />
@@ -1915,16 +2067,16 @@ function App() {
                       }}
                     >
                       <div className="product-figma-text-slide">
-                        <p className="product-figma-text">{selectedSearchItem.detailsText}</p>
+                        <p className="product-figma-text">{productCardDisplay.item.detailsText}</p>
                       </div>
                       <div className="product-figma-text-slide">
                         <p className="product-figma-text is-characteristics">
-                          {selectedSearchItem.characteristicsText}
+                          {productCardDisplay.item.characteristicsText}
                         </p>
                       </div>
                       <div className="product-figma-text-slide">
                         <p className="product-figma-text is-composition">
-                          {selectedSearchItem.compositionText}
+                          {productCardDisplay.item.compositionText}
                         </p>
                       </div>
                     </div>
@@ -2259,7 +2411,7 @@ function App() {
         </>
       ) : null}
 
-      {activeView === 'catalog-list' && activeHeaderPanel !== 'product-card' ? (
+      {activeView === 'catalog-list' && activeHeaderPanel !== 'product-card' && !isProfileOpen ? (
         <>
           <button
             type="button"
@@ -2769,6 +2921,21 @@ function App() {
                       try {
                         setAdminActionLoading(true)
                         setAdminError(null)
+                        let colorVariants: CatalogProductColorVariant[] | null | undefined
+                        try {
+                          if (!adminProductColorVariantsJson.trim()) {
+                            colorVariants = editingProductId ? null : undefined
+                          } else {
+                            colorVariants = parseAdminColorVariantsField(adminProductColorVariantsJson)
+                          }
+                        } catch (parseErr) {
+                          setAdminError(
+                            parseErr instanceof Error
+                              ? parseErr.message
+                              : 'Оттенки: проверь JSON (массив объектов с id и hex)',
+                          )
+                          return
+                        }
                         const payload: AdminProductPayload = {
                           ...adminProductForm,
                           categoryId: catId,
@@ -2787,6 +2954,7 @@ function App() {
                           tabLabelDescription: null,
                           tabLabelCharacteristics: null,
                           tabLabelComposition: null,
+                          colorVariants,
                         }
                         if (editingProductId) {
                           await adminUpdateProduct(editingProductId, payload)
@@ -3014,6 +3182,28 @@ function App() {
                       onChange={(event) =>
                         setAdminProductForm((prev) => ({ ...prev, composition: event.target.value }))
                       }
+                    />
+                    <label className="admin-field-label" htmlFor="admin-product-color-variants">
+                      Оттенки (JSON, опционально)
+                    </label>
+                    <p className="admin-help">
+                      Массив <code className="admin-code">id</code>, <code className="admin-code">hex</code>, по желанию{' '}
+                      <code className="admin-code">label</code> — на сайте только <strong>цветные круги</strong> по{' '}
+                      <code className="admin-code">hex</code>; большое фото карточки всегда из поля «Путь или URL
+                      картинки» выше. Опционально в JSON можно держать <code className="admin-code">swatchImageUrl</code> /{' '}
+                      <code className="admin-code">imageUrl</code> для других сценариев, витрина их не подставляет в
+                      макет. Два и больше оттенка — ряд кругов на карточке. Пустое поле: при создании не сохраняем; при
+                      редактировании — сброс в БД. Явный сброс: строка <code className="admin-code">null</code>.
+                    </p>
+                    <textarea
+                      id="admin-product-color-variants"
+                      className="admin-textarea"
+                      style={{ fontFamily: 'ui-monospace, monospace' }}
+                      spellCheck={false}
+                      placeholder='[\n  { "id": "shade-1", "hex": "#c00", "label": "Classic" }\n]'
+                      value={adminProductColorVariantsJson}
+                      onChange={(event) => setAdminProductColorVariantsJson(event.target.value)}
+                      rows={8}
                     />
                     <div className="admin-form-actions">
                       <button type="submit" className="admin-btn" disabled={adminActionLoading}>

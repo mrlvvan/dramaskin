@@ -1,4 +1,3 @@
-/** Prisma Decimal в JSON для Express — приводим к строке */
 export function toJsonProduct(product) {
   if (!product) return product;
   return {

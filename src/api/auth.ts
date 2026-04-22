@@ -7,7 +7,6 @@ export type AuthUser = {
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
-  /** ISO-строка даты с бэка (Prisma → JSON) */
   dateOfBirth?: string | null;
 };
 
@@ -55,7 +54,6 @@ export function logout(refreshToken: string) {
   });
 }
 
-/** Ответ `GET /me` (полный объект пользователя из Prisma — используем нужные поля) */
 export type MeResponse = {
   id: number;
   email: string;
@@ -75,7 +73,6 @@ export type PatchMePayload = {
   lastName?: string | null;
 };
 
-/** Сохранение имени/фамилии (телефон и дата рождения — только через поддержку, см. бэк) */
 export function patchMe(payload: PatchMePayload) {
   return apiRequest<MeResponse>("/me", { method: "PATCH", auth: true, body: payload });
 }

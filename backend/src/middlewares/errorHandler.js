@@ -29,9 +29,11 @@ export function errorHandler(error, _req, res, _next) {
   }
 
   if (error instanceof Prisma.PrismaClientValidationError) {
+    const detail = typeof error.message === "string" ? error.message.trim() : "";
     return res.status(400).json({
-      message:
-        "Некорректные данные (проверьте: цена и остаток — числа, вес в граммах — целое число, categoryId существует).",
+      message: detail
+        ? `Некорректные данные для базы: ${detail}`
+        : "Некорректные данные (проверьте: цена и остаток — числа, остаток целый, вес в граммах — целое число, categoryId существует).",
     });
   }
 

@@ -21,11 +21,10 @@ build
 .cache
 .eslintcache
 
-# Env & secrets (keep *.env.example tracked)
+# Env & secrets
 .env
 **/.env
 **/.env.*
-!**/.env.example
 
 *.local
 

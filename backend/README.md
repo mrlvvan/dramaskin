@@ -4,8 +4,7 @@ Express + Prisma + MySQL backend for the cosmetics store.
 
 ## Quick start
 
-1. Copy environment:
-   - `cp .env.example .env` (or create `.env` manually on Windows).
+1. Create `backend/.env` (see root `README.md` for variables).
 2. Install dependencies:
    - `npm install`
    - For real auth emails, add `RESEND_API_KEY` and valid `EMAIL_FROM` in `.env`.

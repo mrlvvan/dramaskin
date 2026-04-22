@@ -6,6 +6,19 @@ export type CatalogCategory = {
   slug: string;
 };
 
+/** Элемент JSON `Product.colorVariants` (см. админку / сид). */
+export type CatalogProductColorVariant = {
+  id: string;
+  hex: string;
+  label?: string;
+  swatchImageUrl?: string;
+  imageUrl?: string;
+  imageClassName?: string;
+  price?: string;
+  stock?: number;
+  productId?: number;
+};
+
 export type CatalogProduct = {
   id: number;
   name: string;
@@ -23,6 +36,7 @@ export type CatalogProduct = {
   price: string;
   stock: number;
   imageUrl: string | null;
+  colorVariants?: CatalogProductColorVariant[] | null;
   isPublished: boolean;
   category: CatalogCategory;
 };

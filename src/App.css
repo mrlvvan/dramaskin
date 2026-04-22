@@ -9,7 +9,13 @@
 .home-page {
   --design-width: 1900;
   --design-height: 1080;
-  --design-scale: min(calc(100vw / (var(--design-width) * 1px)), calc(100vh / (var(--design-height) * 1px)));
+  /* «Сырая» пропорция макета; на очень больших экранах ограничиваем рост логотипа */
+  --design-scale-raw: min(
+    calc(100vw / (var(--design-width) * 1px)),
+    calc(100vh / (var(--design-height) * 1px))
+  );
+  --design-scale-max: 1.52;
+  --design-scale: min(var(--design-scale-raw), var(--design-scale-max));
   /**
    * Кадрирование фона при object-fit: cover.
    * center 100% — якорь по низу кадра (важная часть макета внизу фото).
@@ -145,6 +151,8 @@
   --panel-base-width: 1518;
   --panel-base-height: 929;
   --panel-top-offset: 117px;
+  /* На широких дисплеях панель может чуть вырасти (раньше всегда ≤ 1) */
+  --panel-max-upscale: 1;
   position: absolute;
   left: 50%;
   top: var(--panel-top-offset);
@@ -153,7 +161,7 @@
   transform: translateX(-50%)
     scale(
       min(
-        1,
+        var(--panel-max-upscale),
         calc((100vw - 32px) / (var(--panel-base-width) * 1px)),
         calc((100vh - 140px) / (var(--panel-base-height) * 1px))
       )
@@ -468,7 +476,7 @@
   position: absolute;
   left: 150px;
   top: 170px;
-  width: 808px;
+  width: 830px;
   max-height: 344px;
   display: flex;
   flex-direction: column;
@@ -482,7 +490,7 @@
 .cart-item {
   position: relative;
   flex-shrink: 0;
-  width: 808px;
+  width: 830px;
   height: 160px;
 }
 
@@ -490,7 +498,7 @@
   position: absolute;
   left: 2px;
   top: 0;
-  width: 762px;
+  width: 784px;
   height: 160px;
   border-radius: 20px;
   background: rgba(0, 0, 0, 0.25);
@@ -554,7 +562,7 @@
 
 .cart-item-price {
   position: absolute;
-  left: 678px;
+  left: 700px;
   top: 64px;
   margin: 0;
   color: #fff;
@@ -565,7 +573,7 @@
 
 .cart-trash {
   position: absolute;
-  left: 778px;
+  left: 800px;
   top: 65px;
   width: 30px;
   height: 30px;
@@ -634,7 +642,7 @@
 .cart-cost-block {
   position: absolute;
   left: 173px;
-  width: 761px;
+  width: 783px;
   height: 35px;
   display: flex;
   justify-content: space-between;
@@ -1196,20 +1204,23 @@
   line-height: 1.2;
 }
 
-/* Ровные поля: 5×246 + 4×20 = 1310px по центру панели 1518px */
+/* Сетка 5×246 + 4×gap; ширина контейнера 1352px (как в макете после подгонки) */
 .catalog-results-list {
+  --catalog-results-width: 1352px;
+  --catalog-card-col: 246px;
+  --catalog-gap-x: 24.5px;
   position: absolute;
-  left: calc((100% - (5 * 246px + 4 * 20px)) / 2);
+  left: calc((100% - var(--catalog-results-width)) / 2);
   top: 74px;
-  width: calc(5 * 246px + 4 * 20px);
+  width: var(--catalog-results-width);
   height: 830px;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
   display: grid;
-  grid-template-columns: repeat(5, 246px);
+  grid-template-columns: repeat(5, var(--catalog-card-col));
   grid-auto-rows: 324px;
-  gap: 28px 20px;
+  gap: 28px var(--catalog-gap-x);
   align-content: start;
   box-sizing: border-box;
 }
@@ -1304,6 +1315,44 @@
   font-weight: 600;
   font-size: 24px;
   line-height: 1.2083333333;
+}
+
+.product-figma-colors {
+  position: absolute;
+  left: 399px;
+  top: 136px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  width: 554px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.product-figma-color-swatch {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-sizing: border-box;
+  cursor: pointer;
+  background-clip: padding-box;
+}
+
+.product-figma-color-swatch.is-selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2) inset;
+}
+
+.product-figma-layout--with-colors .product-figma-buy {
+  top: 186px;
 }
 
 .product-figma-buy {
@@ -2493,6 +2542,7 @@
 
 .profile-screen {
   position: relative;
+  z-index: 12;
   width: 100%;
   height: 100vh;
 }
@@ -3706,6 +3756,165 @@
   margin-bottom: 4px;
 }
 
+/* Крупные мониторы: чуть крупнее модальные панели, без «ломания» макета */
+@media (min-width: 1800px) and (min-height: 920px) {
+  .store-figma-panel {
+    --panel-max-upscale: 1.05;
+  }
+}
+
+@media (min-width: 2200px) and (min-height: 1000px) {
+  .store-figma-panel {
+    --panel-max-upscale: 1.1;
+  }
+}
+
+@media (min-width: 2800px) and (min-height: 1100px) {
+  .store-figma-panel {
+    --panel-max-upscale: 1.16;
+  }
+}
+
+/* Шире 1920px: фиксированные координаты из макета 1900px уезжают вправо — держим ключевые блоки по центру */
+@media (min-width: 1921px) {
+  .search-pill {
+    left: calc(50% - 325px);
+  }
+
+  .profile-logo {
+    left: calc(50% - 178px);
+  }
+
+  .profile-name-card {
+    left: calc(50% - 134.5px);
+  }
+
+  .profile-loyalty-card,
+  .profile-details-card,
+  .profile-support-card {
+    left: calc(50% - 315px);
+  }
+
+  .profile-orders-card {
+    left: calc(50% - 471px);
+  }
+
+  .profile-orders-empty-state.is-standalone {
+    left: calc(50% - 315px);
+  }
+
+  .profile-admin-card {
+    left: calc(50% - 650px);
+  }
+
+  .profile-logout-card {
+    left: calc(50% - 283.5px);
+  }
+
+  .profile-tabs {
+    left: calc(50% - 532.5px);
+  }
+
+  .auth-modal {
+    left: calc(50% - 251px);
+  }
+}
+
+/* Низкий экран (ноутбук в горизонтали): чуть ниже якорь панели */
+@media (max-height: 760px) and (min-width: 700px) {
+  .store-figma-panel {
+    --panel-top-offset: 96px;
+  }
+}
+
+/* Ноутбуки и планшеты: фиксированная шапка 1900px уже наезжает на поиск — сетка вместо absolute */
+@media (max-width: 1400px) {
+  .home-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 12px;
+    height: auto;
+    min-height: 105px;
+    padding: 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-top: max(16px, env(safe-area-inset-top, 0px));
+    z-index: 7;
+  }
+
+  .menu-trigger-button {
+    position: static;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .header-panel-logo-button {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    width: auto;
+    height: auto;
+    margin: 0;
+  }
+
+  .header-panel-logo {
+    position: static;
+    display: block;
+    width: min(176px, 34vw);
+    height: auto;
+    max-height: 68px;
+  }
+
+  .header-actions {
+    position: static;
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    width: auto;
+    gap: clamp(12px, 3vw, 48px);
+  }
+
+  .search-pill {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    height: 56px;
+    font-size: clamp(18px, 2.8vw, 30px);
+  }
+
+  .search-pill-input {
+    line-height: 56px;
+  }
+
+  .login-button {
+    width: auto;
+    min-width: 120px;
+    height: 56px;
+    padding: 0 20px;
+    font-size: clamp(18px, 2.6vw, 28px);
+  }
+
+  .icon-button {
+    width: clamp(48px, 9vw, 64px);
+    height: clamp(48px, 9vw, 64px);
+  }
+
+  .hero-brand {
+    width: min(90vw, 36rem);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -45%);
+  }
+}
+
 @media (max-width: 900px) {
   .catalog-drawer {
     width: min(74vw, 22.5rem);
@@ -3723,7 +3932,7 @@
     transform: translateX(-50%)
       scale(
         min(
-          1,
+          var(--panel-max-upscale, 1),
           calc((100vw - 20px) / (var(--panel-base-width) * 1px)),
           calc((100vh - 120px) / (var(--panel-base-height) * 1px))
         )
@@ -3895,48 +4104,47 @@
     font-size: 2rem;
   }
 
-  .home-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px 12px;
-    padding: 16px;
-    z-index: 7;
+  .profile-screen {
+    transform: scale(0.72);
+    transform-origin: top center;
+  }
+}
+
+/* Телефоны: панель ближе к верху, профиль читаемее */
+@media (max-width: 600px) {
+  .store-figma-panel {
+    --panel-top-offset: 92px;
+    border-radius: 16px;
   }
 
-  .search-pill {
-    order: 2;
-    flex: 1 0 100%;
-    min-width: 0;
-    width: 100%;
-    height: 56px;
-    font-size: 24px;
-  }
-
-  .header-actions {
-    order: 3;
-    width: 100%;
-    justify-content: flex-end;
-    gap: 12px;
-  }
-
-  .login-button {
-    width: auto;
-    min-width: 132px;
-    height: 56px;
-    padding: 0 22px;
-    font-size: 28px;
-  }
-
-  .hero-brand {
-    width: min(90vw, 36rem);
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -45%);
+  .store-figma-close {
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
   }
 
   .profile-screen {
-    transform: scale(0.7);
+    transform: scale(0.58);
     transform-origin: top center;
+  }
+
+  .home-header {
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
+
+  .auth-modal {
+    max-height: min(92dvh, 900px);
+    overflow-y: auto;
+  }
+}
+
+/* Сенсор: чуть крупнее зона нажатия у иконок в шапке */
+@media (hover: none) and (pointer: coarse) {
+  .menu-trigger-button,
+  .header-actions .icon-button {
+    min-width: 48px;
+    min-height: 48px;
   }
 }

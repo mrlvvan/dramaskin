@@ -141,7 +141,6 @@ catalogRouter.get(
           }
         }
 
-        // Whole-query direct match gets top priority, especially in primary fields.
         if (primaryFields.some((field) => field.includes(normalizedQuery))) {
           score += 8;
           hasPrimaryMatch = true;

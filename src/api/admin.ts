@@ -1,5 +1,5 @@
 import { apiRequest, API_BASE_URL, authenticatedUpload } from "./client";
-import type { CatalogProduct } from "./catalog";
+import type { CatalogProduct, CatalogProductColorVariant } from "./catalog";
 import type { ApiOrder, ApiOrderStatus } from "./orders";
 
 export type AdminProductPayload = {
@@ -15,7 +15,6 @@ export type AdminProductPayload = {
   barcode?: string | null;
   characteristics?: string | null;
   composition?: string | null;
-  /** При сохранении передаём null, чтобы в БД не оставались старые кастомные подписи вкладок. */
   tabLabelDescription?: string | null;
   tabLabelCharacteristics?: string | null;
   tabLabelComposition?: string | null;
@@ -24,6 +23,8 @@ export type AdminProductPayload = {
   imageUrl?: string | null;
   isPublished?: boolean;
   categoryId?: number;
+  /** Массив оттенков или `null`, чтобы сбросить в БД */
+  colorVariants?: CatalogProductColorVariant[] | null;
 };
 
 export type AdminUser = {
@@ -62,7 +63,7 @@ export async function adminUploadProductImage(file: File): Promise<{ url: string
       const data = (await response.json()) as { message?: string };
       if (data?.message) message = data.message;
     } catch {
-      // ignore
+      /* ignored */
     }
     throw new Error(message);
   }

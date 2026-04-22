@@ -6,9 +6,14 @@ import { authMiddleware } from "../middlewares/auth.js";
 import { requireRole } from "../middlewares/requireRole.js";
 import { uploadProductImage } from "../middlewares/uploadProductImage.js";
 import { toJsonProduct, toJsonProductList } from "../utils/productJson.js";
+import { productModelHasColorVariants, warnIfColorVariantsIgnored } from "../utils/prismaProductFeatures.js";
 import { badRequest, notFound } from "../utils/httpError.js";
 
 export const adminRouter = Router();
+
+function omitUndefined(record) {
+  return Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined));
+}
 
 adminRouter.use(authMiddleware, requireRole("ADMIN"));
 
@@ -212,7 +217,44 @@ function optionalTabLabel(value) {
   return s === "" ? null : s;
 }
 
+function parseColorVariantsInput(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!Array.isArray(value)) {
+    throw badRequest("colorVariants должен быть массивом объектов или null");
+  }
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw badRequest("Каждый элемент colorVariants должен быть объектом");
+    }
+    if (typeof item.id !== "string" || !item.id.trim()) {
+      throw badRequest("У каждого оттенка должно быть непустое поле id (строка)");
+    }
+    if (typeof item.hex !== "string" || !item.hex.trim()) {
+      throw badRequest(`Оттенок ${item.id}: укажите hex (строка)`);
+    }
+  }
+  return value;
+}
+
 function mapProductInput(body = {}) {
+  const stockParsed =
+    body.stock !== undefined
+      ? (() => {
+          const n = Number(body.stock);
+          if (!Number.isFinite(n)) return undefined;
+          return Math.trunc(n);
+        })()
+      : undefined;
+
+  const categoryIdParsed =
+    body.categoryId !== undefined && body.categoryId !== null && body.categoryId !== ""
+      ? (() => {
+          const n = Number(body.categoryId);
+          return Number.isFinite(n) && n > 0 ? Math.trunc(n) : undefined;
+        })()
+      : undefined;
+
   return {
     name: body.name ? String(body.name).trim() : undefined,
     slug: body.slug ? String(body.slug).trim() : undefined,
@@ -243,11 +285,19 @@ function mapProductInput(body = {}) {
         : undefined,
     tabLabelComposition:
       body.tabLabelComposition !== undefined ? optionalTabLabel(body.tabLabelComposition) : undefined,
-    price: body.price !== undefined ? Number(body.price) : undefined,
-    stock: body.stock !== undefined ? Number(body.stock) : undefined,
+    price:
+      body.price !== undefined
+        ? (() => {
+            const n = Number(body.price);
+            return Number.isFinite(n) ? n : undefined;
+          })()
+        : undefined,
+    stock: stockParsed,
     imageUrl: body.imageUrl !== undefined ? String(body.imageUrl) : undefined,
     isPublished: body.isPublished !== undefined ? Boolean(body.isPublished) : undefined,
-    categoryId: body.categoryId !== undefined ? Number(body.categoryId) : undefined,
+    categoryId: categoryIdParsed,
+    colorVariants:
+      body.colorVariants !== undefined ? parseColorVariantsInput(body.colorVariants) : undefined,
   };
 }
 
@@ -265,6 +315,8 @@ adminRouter.post(
     if (data.stock === undefined || Number.isNaN(data.stock)) {
       throw badRequest("Укажите остаток на складе (число)");
     }
+
+    warnIfColorVariantsIgnored(req.body);
 
     const product = await prisma.product.create({
       data: {
@@ -288,7 +340,10 @@ adminRouter.post(
         stock: data.stock,
         imageUrl: data.imageUrl || null,
         isPublished: data.isPublished ?? true,
-        categoryId: data.categoryId,
+        category: { connect: { id: data.categoryId } },
+        ...(productModelHasColorVariants() && data.colorVariants !== undefined
+          ? { colorVariants: data.colorVariants }
+          : {}),
       },
       include: { category: true },
     });
@@ -308,30 +363,43 @@ adminRouter.patch(
       throw badRequest("Укажите хотя бы одно поле для изменения");
     }
 
+    warnIfColorVariantsIgnored(req.body);
+
+    const patchData = omitUndefined({
+      name: data.name,
+      slug: data.slug,
+      subcategory: data.subcategory,
+      description: data.description,
+      usage: data.usage,
+      manufacturer: data.manufacturer,
+      activeComponents: data.activeComponents,
+      weightGr: data.weightGr,
+      country: data.country,
+      barcode: data.barcode,
+      characteristics: data.characteristics,
+      composition: data.composition,
+      tabLabelDescription: data.tabLabelDescription,
+      tabLabelCharacteristics: data.tabLabelCharacteristics,
+      tabLabelComposition: data.tabLabelComposition,
+      price: data.price,
+      stock: data.stock,
+      imageUrl: data.imageUrl,
+      isPublished: data.isPublished,
+      category:
+        data.categoryId !== undefined ? { connect: { id: data.categoryId } } : undefined,
+    });
+    if (productModelHasColorVariants() && data.colorVariants !== undefined) {
+      patchData.colorVariants = data.colorVariants;
+    }
+    if (Object.keys(patchData).length === 0) {
+      throw badRequest(
+        "Нечего записать в базу. Если меняли только оттенки — на сервере старый Prisma без поля colorVariants: выполни prisma migrate deploy и prisma generate, перезапусти бэкенд.",
+      );
+    }
+
     const product = await prisma.product.update({
       where: { id },
-      data: {
-        name: data.name,
-        slug: data.slug,
-        subcategory: data.subcategory,
-        description: data.description,
-        usage: data.usage,
-        manufacturer: data.manufacturer,
-        activeComponents: data.activeComponents,
-        weightGr: data.weightGr,
-        country: data.country,
-        barcode: data.barcode,
-        characteristics: data.characteristics,
-        composition: data.composition,
-        tabLabelDescription: data.tabLabelDescription,
-        tabLabelCharacteristics: data.tabLabelCharacteristics,
-        tabLabelComposition: data.tabLabelComposition,
-        price: data.price,
-        stock: data.stock,
-        imageUrl: data.imageUrl,
-        isPublished: data.isPublished,
-        categoryId: data.categoryId,
-      },
+      data: patchData,
       include: { category: true },
     });
 

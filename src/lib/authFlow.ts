@@ -31,7 +31,6 @@ function meToAuthUser(data: MeResponse): AuthUser {
   };
 }
 
-/** Восстановить пользователя после перезагрузки (токены в localStorage → GET /me) */
 export async function restoreSession(): Promise<void> {
   const access = localStorage.getItem(ACCESS_KEY);
   const refresh = localStorage.getItem(REFRESH_KEY);
@@ -99,7 +98,7 @@ export async function signOut() {
     try {
       await logout(store.refreshToken);
     } catch {
-      // ignore backend errors during local sign out
+      /* ignored */
     }
   }
   store.clearSession();

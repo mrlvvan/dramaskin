@@ -1,6 +1,14 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { PrismaClient, UserRole } from "@prisma/client";
 
 const prisma = new PrismaClient();
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const brayeLipsleekVariants = JSON.parse(
+  readFileSync(join(__dirname, "../../src/data/braye-lipsleek-variants.json"), "utf-8"),
+);
 
 async function seed() {
   const categories = [
@@ -225,6 +233,27 @@ async function seed() {
       categoryId: makeupCategory?.id,
     },
     {
+      name: "Компактный вельветовый бальзам для губ и щёк BRAYE LIPSLEEK",
+      slug: "braye-lipsleek-lip-cheek-balm",
+      subcategory: "Для губ и бровей",
+      description:
+        "Вельветовая текстура бальзама BRAYE LIPSLEEK мягко пигментирует губы и щёки, даёт ровное покрытие и комфорт в течение дня. Компактный формат удобно носить с собой.\n\nЛинейка LIPSLEEK: несколько оттенков на выбор (см. карточку товара).",
+      usage: "Нанесите на губы или щёки кончиком пальца или кистью, при необходимости наслаивайте.",
+      manufacturer: "BRAYE",
+      activeComponents: "Масло яблочных косточек, гиалуронат, пантенол, аденозин",
+      weightGr: 3,
+      country: "Южная Корея",
+      barcode: "8800000BRAYE01",
+      characteristics:
+        "Производитель: BRAYE\nЛинейка: LIPSLEEK\nОбъём: 2,3 г\nОттенки: 01 ARDOR — 10 CLEAR\nСтрана: Южная Корея",
+      composition: "Состав уточняется на упаковке.",
+      price: "1800",
+      stock: 40,
+      imageUrl: brayeLipsleekVariants[0]?.imageUrl || "/kartochka(krem1).png",
+      categoryId: makeupCategory?.id,
+      colorVariants: brayeLipsleekVariants,
+    },
+    {
       name: "Вельветовый бальзам-пудинг для губ и щек fwee Lip&Cheek Blurry Pudding Pot Keyring Set",
       slug: "fwee-lip-cheek-blurry-pudding-pot-keyring-set",
       subcategory: "Для губ и бровей",
@@ -373,6 +402,7 @@ async function seed() {
         imageUrl: product.imageUrl,
         categoryId: product.categoryId,
         isPublished: true,
+        colorVariants: product.colorVariants ?? null,
       },
       create: {
         ...product,

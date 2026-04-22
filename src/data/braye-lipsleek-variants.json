@@ -1,0 +1,12 @@
+[
+  { "id": "braye-ls-01", "label": "01 ARDOR", "hex": "#D6283A" },
+  { "id": "braye-ls-02", "label": "02 RORTY", "hex": "#E07A62" },
+  { "id": "braye-ls-03", "label": "03 POSH", "hex": "#A85C6C" },
+  { "id": "braye-ls-04", "label": "04 SAVVY", "hex": "#D67284" },
+  { "id": "braye-ls-05", "label": "05 EASE", "hex": "#ECB4BE" },
+  { "id": "braye-ls-06", "label": "06 PLUCKY", "hex": "#8E7078" },
+  { "id": "braye-ls-07", "label": "07 BOLDNESS", "hex": "#8B5E48" },
+  { "id": "braye-ls-08", "label": "08 ROUGHLY", "hex": "#A84842" },
+  { "id": "braye-ls-09", "label": "09 COOLNESS", "hex": "#8E4E62" },
+  { "id": "braye-ls-10", "label": "10 CLEAR", "hex": "#EDE6E1" }
+]
